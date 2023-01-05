@@ -9,6 +9,8 @@
 
 #include "deliveryforecast.pb.h"
 
+#include noise_generator.cc
+
 class Receiver
 {
 private:
@@ -57,6 +59,8 @@ private:
   RecvQueue _recv_queue;
 
   double _ewma_rate_estimate;
+
+  NoiseGenerator _noise_gen;
 
 public:
 

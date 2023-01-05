@@ -20,7 +20,8 @@ Receiver::Receiver()
     _count_this_tick( 0 ),
     _cached_forecast(),
     _recv_queue(),
-    _ewma_rate_estimate( 1 )
+    _ewma_rate_estimate( 1 ),
+    _noise_gen(5.0)
 {
   for ( int i = 0; i < NUM_TICKS; i++ ) {
     ProcessForecastInterval one_forecast( .001 * TICK_LENGTH,
@@ -36,7 +37,7 @@ void Receiver::advance_to( const uint64_t time )
 {
   assert( time >= _time );
 
- /*fprintf(stderr, "Count: %f\n", _count_this_tick);*/
+  fprintf(stderr, "Random Number: %f\n", _noise_gen.get_noise());
 
   while ( _time + TICK_LENGTH < time ) {
 //    _process.evolve( .001 * TICK_LENGTH );
