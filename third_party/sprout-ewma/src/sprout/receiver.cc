@@ -47,7 +47,7 @@ void Receiver::advance_to( const uint64_t time )
   //    }
   //    _process.observe( .001 * TICK_LENGTH, discrete_observe );
 
-      const double alpha = 1/3;
+      const double alpha = 1/8;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
 
 
