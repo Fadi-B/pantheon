@@ -67,3 +67,23 @@ schemes:
     name: FillP-Sheep
     color: violet
     marker: 'D'
+  sprout-prophet:
+    name: Sprout Prophet
+    color: purple
+    marker: '+'
+  sprout-ewma:
+    name: Sprout-EWMA
+    color: magenta
+    marker: 'o'
+  sprout-ma:
+    name: Sprout-MA
+    color: pink
+    marker: '+'
+  sprout-sewma:
+    name: Sprout-SEWMA
+    color: silver
+    marker: 'h'
+  tcp-beta:
+    name: tcp-beta
+    color: magenta
+    marker: 'o'
