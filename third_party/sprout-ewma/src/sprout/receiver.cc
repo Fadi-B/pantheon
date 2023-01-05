@@ -20,7 +20,7 @@ Receiver::Receiver()
     _count_this_tick( 0 ),
     _cached_forecast(),
     _recv_queue(),
-    _ewma_rate_estimate( 10 )
+    _ewma_rate_estimate( 1 )
 {
   for ( int i = 0; i < NUM_TICKS; i++ ) {
     ProcessForecastInterval one_forecast( .001 * TICK_LENGTH,
