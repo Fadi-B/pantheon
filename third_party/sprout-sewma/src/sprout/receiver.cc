@@ -37,7 +37,7 @@ void Receiver::advance_to( const uint64_t time )
 {
   assert( time >= _time );
 
-  fprintf(stderr, "Random Number: %f\n", _noise_gen.get_noise());
+  fprintf(stderr, "Random Number: %f\n", gen.get_noise(generator));
 
   while ( _time + TICK_LENGTH < time ) {
 //    _process.evolve( .001 * TICK_LENGTH );

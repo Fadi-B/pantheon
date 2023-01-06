@@ -60,7 +60,9 @@ private:
 
   double _ewma_rate_estimate;
 
-  NoiseGenerator _noise_gen;
+  /* Creating the Gaussian Noise generator */
+  NoiseGenerator gen = NoiseGenerator(0, 5, 1);
+  NoiseGenerator::Generator generator = gen.get_generator();
 
 public:
 
