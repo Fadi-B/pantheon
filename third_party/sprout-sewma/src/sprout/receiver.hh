@@ -9,7 +9,7 @@
 
 #include "deliveryforecast.pb.h"
 
-#include noise_generator.cc
+#include "noise_generator.hh"
 
 class Receiver
 {
