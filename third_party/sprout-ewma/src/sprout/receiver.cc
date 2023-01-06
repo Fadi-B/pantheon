@@ -36,22 +36,12 @@ void Receiver::advance_to( const uint64_t time )
 {
   assert( time >= _time );
 
- /*fprintf(stderr, "Count: %f\n", _count_this_tick);*/
-
   while ( _time + TICK_LENGTH < time ) {
-//    _process.evolve( .001 * TICK_LENGTH );
     if ( (_time >= _score_time) || (_count_this_tick > 0) ) {
-  //    int discrete_observe = int( _count_this_tick + 0.5 );
-  //    if ( _count_this_tick > 0 && _count_this_tick < 1 ) {
-  //   	discrete_observe = 1;
-  //    }
-  //    _process.observe( .001 * TICK_LENGTH, discrete_observe );
 
-      const double alpha = 1/8;
+      const double alpha = 1.0 / 4.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
 
-
-      //fprintf(stderr, "COUNT: %f \n", _count_this_tick);
       _count_this_tick = 0;
 
     } else {
@@ -66,8 +56,6 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _count_this_tick += len / 1400.0;
   _recv_queue.recv( seq, throwaway_window, len );
   _score_time = std::max( _time + time_to_next, _score_time );
-
-  //fprintf(stderr, "LEN: %f \n", len);
 
 }
 
@@ -87,7 +75,6 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     int tick_number = 1;
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
-      //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
       _cached_forecast.add_counts(_ewma_rate_estimate * tick_number);
       tick_number++;
 
