@@ -58,7 +58,7 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _recv_queue.recv( seq, throwaway_window, len );
   _score_time = std::max( _time + time_to_next, _score_time );
 
-  fprintf(stderr, "LEN: %f \n", len);
+  fprintf(stderr, "LEN: %d \n", len);
 
 }
 

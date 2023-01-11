@@ -3,11 +3,6 @@
 
 using namespace std;
 
-RTTCollector::RTTCollector()
-{
-
-}
-
 void RTTCollector::update(double RTT, double receptionTime) 
 {
 

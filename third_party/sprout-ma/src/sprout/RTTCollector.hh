@@ -13,7 +13,10 @@ public:
     static const int RTT_INDEX = 0;
     static const int RECEPTION_INDEX = 1;
 
-    RTTCollector();
+    inline RTTCollector()
+    {
+
+    }
 
     void update(double RTT, double receptionTime);
 
