@@ -9,6 +9,8 @@
 
 #include "deliveryforecast.pb.h"
 
+#include "RTTCollector.hh"
+
 class Receiver
 {
 private:
@@ -57,6 +59,8 @@ private:
   RecvQueue _recv_queue;
 
   double _ewma_rate_estimate;
+
+  RTTCollector _rtt_collector = RTTCollector();
 
 public:
 
