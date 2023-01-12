@@ -9,7 +9,8 @@
 
 #include "deliveryforecast.pb.h"
 
-#include "RTTCollector.hh"
+#include "rtt_collector_addon.hh"
+#include <chrono>
 
 class Receiver
 {
@@ -62,9 +63,11 @@ private:
 
   RTTCollector _rtt_collector;
 
-  uint64_t _collect_time;
+  double _collect_time;
 
   std::chrono::high_resolution_clock::time_point _start_time_point;
+
+  uint64_t _prev_reception;
 
 public:
 
@@ -79,7 +82,7 @@ public:
   Receiver();
   void warp_to( const uint64_t time ) { _score_time = _time = time; }
   void advance_to( const uint64_t time );
-  void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len );
+  void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception );
 
   Sprout::DeliveryForecast forecast( void );
 

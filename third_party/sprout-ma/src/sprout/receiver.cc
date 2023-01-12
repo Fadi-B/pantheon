@@ -27,11 +27,12 @@ Receiver::Receiver()
     _ewma_rate_estimate( 1 ),
     _rtt_collector(),
     _collect_time( 0 ),
-    _start_time_point( chrono::high_resolution_clock::now() )
+    _start_time_point( chrono::high_resolution_clock::now() ),
+    _prev_reception( 0 )
 {
 
   double cur = Receiver::current_timestamp(_start_time_point);
-  _collect_time = cur + 20.0;
+  _collect_time = cur + TICK_LENGTH;
 
   fprintf(stderr, "Start Time: %f \n", cur);
   fprintf(stderr, "Collect Time: %f \n", _collect_time);
@@ -66,7 +67,7 @@ void Receiver::advance_to( const uint64_t time )
   }
 }
 
-void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len )
+void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception )
 {
   _count_this_tick += len / 1400.0;
   _recv_queue.recv( seq, throwaway_window, len );
@@ -76,11 +77,28 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   if (current_time >= _collect_time) {
     //fprintf(stderr, "Curr Time: %f \n", current_time);
     //fprintf(stderr, "Collect Time: %f \n", _collect_time);
-    fprintf(stderr, "Diff: %f \n", current_time - _collect_time);
-    _collect_time += 20.0;
+//    fprintf(stderr, "Diff: %f \n", current_time - _collect_time);
+    _collect_time = current_time + TICK_LENGTH;
+
+   /* Compute RTT Gradient and ensure that data for this tick is reset */
+    _rtt_collector.computeRTTGradient();
+    _rtt_collector.resetData();
+
   }
 
-  //fprintf(stderr, "LEN: %d \n", len);
+  if (!(timestamp_reception < _prev_reception)) { //To avoid some bug
+
+    uint64_t RTT = timestamp_reception - timestamp;
+    uint64_t receptionTime = timestamp_reception;
+
+    _rtt_collector.update(RTT,  receptionTime);
+
+    fprintf(stderr, "RTT: %u \n", timestamp_reception - timestamp);
+    fprintf(stderr, "Reception: %u \n", timestamp_reception);
+
+    _prev_reception = timestamp_reception;
+
+  }
 
 }
 

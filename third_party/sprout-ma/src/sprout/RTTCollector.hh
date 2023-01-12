@@ -25,6 +25,16 @@ public:
     void resetData();
     void resetAll();
 
+    std::list< std::tuple<double, double> > getData() 
+    {
+        return data;
+    }
+
+    std::list< double > getRTTGrads() 
+    {
+        return RTTGrads;
+    }
+
 private:
 
     std::list< std::tuple<double, double> > data;
