@@ -11,6 +11,8 @@
 #include "receiver.hh"
 #include "sproutmath.pb.h"
 
+#include "filewriter.hh"
+
 using namespace std;
 
 Receiver::Receiver()
@@ -84,6 +86,10 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
     _rtt_collector.computeRTTGradient();
     _rtt_collector.resetData();
 
+    std::list< double > RTTGrads = _rtt_collector.getRTTGrads();
+
+    write_to_file("fadi.txt", RTTGrads);
+
   }
 
   if (!(timestamp_reception < _prev_reception)) { //To avoid some bug
@@ -91,10 +97,15 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
     uint64_t RTT = timestamp_reception - timestamp;
     uint64_t receptionTime = timestamp_reception;
 
+    /* Ensure something odd has not occured */
+    if (RTT < 50000) {
+
     _rtt_collector.update(RTT,  receptionTime);
 
-    fprintf(stderr, "RTT: %u \n", timestamp_reception - timestamp);
-    fprintf(stderr, "Reception: %u \n", timestamp_reception);
+    }
+
+//    fprintf(stderr, "RTT: %u \n", timestamp_reception - timestamp);
+//    fprintf(stderr, "Reception: %u \n", timestamp_reception);
 
     _prev_reception = timestamp_reception;
 

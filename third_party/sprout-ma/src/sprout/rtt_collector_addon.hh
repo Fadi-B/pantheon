@@ -1,5 +1,5 @@
-#ifndef RTT_COLLECTOR_ADDON_HPP
-#define RTT_COLLECTOR_ADDON_HPP
+#ifndef RTTCOLLECTOR_HPP
+#define RTTCOLLECTOR_HPP
 
 #include <list>
 #include<tuple>
@@ -32,12 +32,14 @@ public:
     double computeRTTGradient()
     {
 
-        if (data.empty()) {
+	/* Under the assumption that RTTGrad remains unchanged when not enough data observed */
+        //if (data.empty() || data.size() == 1) {
 
-	    return 0;
-        }
+	//    return 0;
 
-        int size = RTTCollector::data.size();
+        //}
+
+        int size = data.size();
 
         double sumX = 0;
         double sumX_squared = 0;
@@ -59,8 +61,40 @@ public:
 
         }
 
+        double numerator = size*sumXY - sumX*sumY;
+	double denominator = size*sumX_squared - sumX*sumX;
+
+	fprintf(stderr, "Start \n");
+
+        if (1) {
+
+        for (auto it = data.begin(); it != data.end(); it++)
+        {
+
+	    auto obj = *it;
+
+            double x_coord = get<RECEPTION_INDEX>(obj);
+            double y_coord = get<RTT_INDEX>(obj);
+
+            fprintf(stderr, "RTT: %f STAMP: %f \n", y_coord, x_coord);
+
+        }
+
+        }
+
+//	if (denominator == 0) {
+
+        fprintf(stderr, "Denominator: %f \n", denominator);
+	fprintf(stderr, "Numerator: %f \n", numerator);
+
+
+//        }
+
+	fprintf(stderr, "End \n");
+
         /* Calculating slope of linear fit */
 
+	/* IMPORTANT: Will return NAN if no data observed or no unique solution */
         double slope = (size*sumXY - sumX*sumY) / (size*sumX_squared - sumX*sumX);
 
         /* Update observed slopes */
