@@ -60,9 +60,21 @@ private:
 
   double _ewma_rate_estimate;
 
-  RTTCollector _rtt_collector = RTTCollector();
+  RTTCollector _rtt_collector;
+
+  uint64_t _collect_time;
+
+  std::chrono::high_resolution_clock::time_point _start_time_point;
 
 public:
+
+  static double current_timestamp( std::chrono::high_resolution_clock::time_point &start_time_point ){
+  using namespace std::chrono;
+  high_resolution_clock::time_point cur_time_point = high_resolution_clock::now();
+  // convert to milliseconds, because that is the scale on which the
+  // rats have been trained
+  return duration_cast<duration<double>>(cur_time_point - start_time_point).count()*1000;
+ }
 
   Receiver();
   void warp_to( const uint64_t time ) { _score_time = _time = time; }
