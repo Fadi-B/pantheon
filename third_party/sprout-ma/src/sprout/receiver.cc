@@ -12,6 +12,7 @@
 #include "sproutmath.pb.h"
 
 #include "filewriter.hh"
+#include "network.h"
 
 using namespace std;
 
@@ -27,10 +28,10 @@ Receiver::Receiver()
     _cached_forecast(),
     _recv_queue(),
     _ewma_rate_estimate( 1 ),
-    _rtt_collector(),
+    _rtt_collector(500),
+    _packet_collector(500),
     _collect_time( 0 ),
-    _start_time_point( chrono::high_resolution_clock::now() ),
-    _prev_reception( 0 )
+    _start_time_point( chrono::high_resolution_clock::now() )
 {
 
   double cur = Receiver::current_timestamp(_start_time_point);
@@ -76,40 +77,47 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _score_time = std::max( _time + time_to_next, _score_time );
 
   double current_time = Receiver::current_timestamp(_start_time_point);
+
   if (current_time >= _collect_time) {
-    //fprintf(stderr, "Curr Time: %f \n", current_time);
-    //fprintf(stderr, "Collect Time: %f \n", _collect_time);
+//    fprintf(stderr, "Curr Time: %f \n", current_time);
+//    fprintf(stderr, "Collect Time: %f \n", _collect_time);
 //    fprintf(stderr, "Diff: %f \n", current_time - _collect_time);
-    _collect_time = current_time + TICK_LENGTH;
+    _collect_time = current_time + 500;
 
    /* Compute RTT Gradient and ensure that data for this tick is reset */
     _rtt_collector.computeRTTGradient();
     _rtt_collector.resetData();
 
+    _packet_collector.computeThroughput();
+    _packet_collector.resetData();
+
     std::list< double > RTTGrads = _rtt_collector.getRTTGrads();
+    std::list< double > throughput = _packet_collector.getThroughput();
 
     write_to_file("fadi.txt", RTTGrads);
+    write_to_file("through.txt", throughput);
 
   }
 
-  if (!(timestamp_reception < _prev_reception)) { //To avoid some bug
+  //uint16_t d = Network::timestamp_diff(1, 2);
 
-    uint64_t RTT = timestamp_reception - timestamp;
+//  if (!(timestamp_reception < _prev_reception)) { //To avoid some bug
+
+    uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
     uint64_t receptionTime = timestamp_reception;
 
     /* Ensure something odd has not occured */
-    if (RTT < 50000) {
+//    if (RTT < 50000) {
 
     _rtt_collector.update(RTT,  receptionTime);
+    _packet_collector.update( len/1400 );
 
-    }
+//    }
 
 //    fprintf(stderr, "RTT: %u \n", timestamp_reception - timestamp);
 //    fprintf(stderr, "Reception: %u \n", timestamp_reception);
 
-    _prev_reception = timestamp_reception;
-
-  }
+//  }
 
 }
 

@@ -9,7 +9,8 @@
 
 #include "deliveryforecast.pb.h"
 
-#include "rtt_collector_addon.hh"
+#include "rtt_collector.hh"
+#include "packet_collector.hh"
 #include <chrono>
 
 class Receiver
@@ -63,11 +64,11 @@ private:
 
   RTTCollector _rtt_collector;
 
+  PacketCollector _packet_collector;
+
   double _collect_time;
 
   std::chrono::high_resolution_clock::time_point _start_time_point;
-
-  uint64_t _prev_reception;
 
 public:
 

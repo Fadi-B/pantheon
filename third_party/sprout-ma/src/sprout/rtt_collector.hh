@@ -15,8 +15,11 @@ public:
     static const int RTT_INDEX = 0;
     static const int RECEPTION_INDEX = 1;
 
-    inline RTTCollector()
+    inline RTTCollector(double tick_time)
     {
+
+	TICK_TIME = tick_time;
+	RTTGrads.push_back(tick_time);
 
     }
 
@@ -33,11 +36,11 @@ public:
     {
 
 	/* Under the assumption that RTTGrad remains unchanged when not enough data observed */
-        //if (data.empty() || data.size() == 1) {
+        if (data.empty() || data.size() == 1) {
 
-	//    return 0;
+	    return 0;
 
-        //}
+        }
 
         int size = data.size();
 
@@ -82,13 +85,13 @@ public:
 
         }
 
-//	if (denominator == 0) {
+	if (denominator == 0) {
 
         fprintf(stderr, "Denominator: %f \n", denominator);
 	fprintf(stderr, "Numerator: %f \n", numerator);
 
 
-//        }
+        }
 
 	fprintf(stderr, "End \n");
 
@@ -115,6 +118,8 @@ public:
     {
         data.clear();
         RTTGrads.clear();
+
+	RTTGrads.push_back(TICK_TIME);
     }
 
     std::list< std::tuple<double, double> > getData() 
@@ -131,6 +136,8 @@ private:
 
     std::list< std::tuple<double, double> > data;
     std::list< double > RTTGrads;
+
+    double TICK_TIME;
 
 };
 
