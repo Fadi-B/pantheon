@@ -11,7 +11,6 @@
 #include "receiver.hh"
 #include "sproutmath.pb.h"
 
-#include "filewriter.hh"
 #include "network.h"
 
 using namespace std;
@@ -28,13 +27,12 @@ Receiver::Receiver()
     _cached_forecast(),
     _recv_queue(),
     _ewma_rate_estimate( 1 ),
-    _rtt_collector(500),
-    _packet_collector(500),
     _collect_time( 0 ),
-    _start_time_point( chrono::high_resolution_clock::now() )
+    _start_time_point( chrono::high_resolution_clock::now() ),
+    _collector_manager(500)
 {
 
-  double cur = Receiver::current_timestamp(_start_time_point);
+  double cur = CollectorManager::getCurrentTime(_start_time_point);
   _collect_time = cur + TICK_LENGTH;
 
   fprintf(stderr, "Start Time: %f \n", cur);
@@ -76,48 +74,8 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _recv_queue.recv( seq, throwaway_window, len );
   _score_time = std::max( _time + time_to_next, _score_time );
 
-  double current_time = Receiver::current_timestamp(_start_time_point);
-
-  if (current_time >= _collect_time) {
-//    fprintf(stderr, "Curr Time: %f \n", current_time);
-//    fprintf(stderr, "Collect Time: %f \n", _collect_time);
-//    fprintf(stderr, "Diff: %f \n", current_time - _collect_time);
-    _collect_time = current_time + 500;
-
-   /* Compute RTT Gradient and ensure that data for this tick is reset */
-    _rtt_collector.computeRTTGradient();
-    _rtt_collector.resetData();
-
-    _packet_collector.computeThroughput();
-    _packet_collector.resetData();
-
-    std::list< double > RTTGrads = _rtt_collector.getRTTGrads();
-    std::list< double > throughput = _packet_collector.getThroughput();
-
-    write_to_file("fadi.txt", RTTGrads);
-    write_to_file("through.txt", throughput);
-
-  }
-
-  //uint16_t d = Network::timestamp_diff(1, 2);
-
-//  if (!(timestamp_reception < _prev_reception)) { //To avoid some bug
-
-    uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
-    uint64_t receptionTime = timestamp_reception;
-
-    /* Ensure something odd has not occured */
-//    if (RTT < 50000) {
-
-    _rtt_collector.update(RTT,  receptionTime);
-    _packet_collector.update( len/1400 );
-
-//    }
-
-//    fprintf(stderr, "RTT: %u \n", timestamp_reception - timestamp);
-//    fprintf(stderr, "Reception: %u \n", timestamp_reception);
-
-//  }
+  uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
+  _collector_manager.collectData(len/1400, RTT, timestamp_reception);
 
 }
 

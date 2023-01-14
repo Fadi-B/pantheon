@@ -2,76 +2,95 @@
 #define PACKET_COLLECTOR_HPP
 
 #include <list>
+#include "data_collector.hh"
+//#include "filewriter.hh"
 
 using namespace std;
 
-class PacketCollector
+class PacketCollector : public Collector
 {
 
 public:
 
+    using Collector::TICK_TIME;
+    using Collector::data;
+    using Collector::writer;
+
     static const int MSS = 1500;     /* Bytes */
     static const int BYTE_SIZE = 8;  /* Bits */
 
-    inline PacketCollector(double tick_time)
+    PacketCollector(double tick_time)
+    :Collector(tick_time)
     {
-	TICK_TIME = tick_time;
-	throughput.push_back(tick_time);
-    }
-
-    void update(double packets)
-    {
-
-        data = data + packets;
 
     }
 
-    double computeThroughput()
+    Type getType() const override
     {
+
+        return Type::Packet;
+
+    }
+
+    void update(double packets, double arg2 __attribute((unused)))
+    {
+
+        helper_data = helper_data + packets;
+        return;
+
+    }
+
+    double compute()
+    {
+
+        fprintf(stderr, "Helper2: %f \n", helper_data);
 
         int bits = MSS * BYTE_SIZE;
 
-        double total_bits = data * bits;
+        double total_bits = helper_data * bits;
 
         double bits_per_sec = total_bits / (TICK_TIME*1000);
 
-        throughput.push_back(bits_per_sec);
+        data.push_back(bits_per_sec);
 
 	return bits_per_sec;
 
     }
 
-    void resetData()
+    void resetHelperData()
     {
 
-        data = 0;
+        helper_data = 0;
 
     }
 
     void resetAll()
     {
-        data = 0;
-        throughput.clear();
+        helper_data = 0;
+        data.clear();
 
-	throughput.push_back(TICK_TIME);
+	data.push_back(TICK_TIME);
     }
 
-    double getData() 
+    double getHelperData() 
     {
-        return data;
+        return helper_data;
     }
 
-    std::list< double > getThroughput() 
+    void saveData(std::list<double> &data)
     {
-        return throughput;
+
+        writer.write_to_file("throughput_data.csv", data);
+
     }
 
 private:
 
-    double data;
-    std::list< double > throughput;
+    double helper_data;
 
-    double TICK_TIME;
+//    std::list< double > dataf;
+
+//    double TICK_TIME;
 
 };
 

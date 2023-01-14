@@ -1,55 +1,66 @@
-#ifndef RTTCOLLECTOR_HPP
-#define RTTCOLLECTOR_HPP
+#ifndef RTT_COLLECTOR_HPP
+#define RTT_COLLECTOR_HPP
 
 #include <list>
-#include<tuple>
-//#include "boost/tuple/tuple.hpp"
+#include <tuple>
+
+//#include "filewriter.hh"
+#include "data_collector.hh"
 
 using namespace std;
 
-class RTTCollector
+class RTTGradCollector : public Collector
 {
 
 public:
 
+    using Collector::TICK_TIME;
+    using Collector::data;
+    using Collector::writer;
+
     static const int RTT_INDEX = 0;
     static const int RECEPTION_INDEX = 1;
 
-    inline RTTCollector(double tick_time)
+    RTTGradCollector(double tick_time)
+    :Collector(tick_time)
     {
 
-	TICK_TIME = tick_time;
-	RTTGrads.push_back(tick_time);
+    }
+
+    Type getType() const override
+    {
+
+    	return Type::RTTGrad;
 
     }
 
     void update(double RTT, double receptionTime) 
     {
 
-        data.push_back( tuple<double, double>(RTT, receptionTime) );
+        helper_data.push_back( tuple<double, double>(RTT, receptionTime) );
 
         return;
 
     }
 
-    double computeRTTGradient()
+    double compute()
     {
 
 	/* Under the assumption that RTTGrad remains unchanged when not enough data observed */
-        if (data.empty() || data.size() == 1) {
+        if (helper_data.empty() || helper_data.size() == 1) {
 
 	    return 0;
 
         }
 
-        int size = data.size();
+        int size = helper_data.size();
 
         double sumX = 0;
         double sumX_squared = 0;
         double sumY = 0;
         double sumXY = 0;
 
-        for (auto it = data.begin(); it != data.end(); it++)
+        for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
 
 	        auto obj = *it;
@@ -67,11 +78,11 @@ public:
         double numerator = size*sumXY - sumX*sumY;
 	double denominator = size*sumX_squared - sumX*sumX;
 
-	fprintf(stderr, "Start \n");
-
+//	fprintf(stderr, "Start \n");
+/*
         if (1) {
 
-        for (auto it = data.begin(); it != data.end(); it++)
+        for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
 
 	    auto obj = *it;
@@ -94,50 +105,49 @@ public:
         }
 
 	fprintf(stderr, "End \n");
-
+*/
         /* Calculating slope of linear fit */
 
 	/* IMPORTANT: Will return NAN if no data observed or no unique solution */
         double slope = (size*sumXY - sumX*sumY) / (size*sumX_squared - sumX*sumX);
 
         /* Update observed slopes */
-        RTTGrads.push_back(slope);
+        data.push_back(slope);
 
         return slope;
 
     }
 
-    void resetData()
+    void resetHelperData()
     {
 
-        data.clear();
+        helper_data.clear();
 
     }
 
     void resetAll()
     {
+        helper_data.clear();
         data.clear();
-        RTTGrads.clear();
 
-	RTTGrads.push_back(TICK_TIME);
+	 data.push_back(TICK_TIME);
     }
 
-    std::list< std::tuple<double, double> > getData() 
+    std::list< std::tuple<double, double> > getHelperData() 
     {
-        return data;
+        return helper_data;
     }
 
-    std::list< double > getRTTGrads() 
+    void saveData(std::list<double> &data)
     {
-        return RTTGrads;
+
+        writer.write_to_file("rtt_grad_data.csv", data);
+
     }
 
 private:
 
-    std::list< std::tuple<double, double> > data;
-    std::list< double > RTTGrads;
-
-    double TICK_TIME;
+    std::list< std::tuple<double, double> > helper_data;
 
 };
 
