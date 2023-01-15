@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I../protobufs
+AM_CPPFLAGS = -I../protobufs -I../network -I../crypto
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 
 noinst_LIBRARIES = libsprout.a
