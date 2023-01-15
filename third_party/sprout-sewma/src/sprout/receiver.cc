@@ -42,7 +42,9 @@ void Receiver::advance_to( const uint64_t time )
 
       const double alpha = 1.0 / 8.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
-      _ewma_rate_estimate = _ewma_rate_estimate + gen.get_noise(generator);
+      
+      /* Non-Random Walk Addition */
+      //_ewma_rate_estimate = _ewma_rate_estimate + gen.get_noise(generator);
 
 
       fprintf(stderr, "COUNT: %f \n", _count_this_tick);
@@ -76,6 +78,7 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     _cached_forecast.set_time( _time );
     _cached_forecast.clear_counts();
 
+    /* Non-random Walk
     int tick_number = 1;
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
@@ -83,6 +86,21 @@ Sprout::DeliveryForecast Receiver::forecast( void )
       tick_number++;
 
     }
+    */
+
+    /* Random Walk of the ewma_estimate */
+    double noisy_estimate = _ewma_rate_estimate;
+    double accumulate_estimate = _ewma_rate_estimate;
+
+    for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
+
+      _cached_forecast.add_counts(accumulate_estimate);
+
+      noisy_estimate = noisy_estimate + gen.get_noise(generator);
+      accumulate_estimate = accumulate_estimate + noisy_estimate;
+
+    }
+
 
     return _cached_forecast;
   }
