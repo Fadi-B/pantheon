@@ -66,7 +66,7 @@ int main( int argc, char *argv[] )
   }
 
   fallback_interval = 50;
-  int new_rate_interval = 500;
+  int new_rate_interval = 250;
 
   uint64_t time_of_next_transmission = timestamp() + fallback_interval;
   uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
@@ -77,14 +77,14 @@ int main( int argc, char *argv[] )
 
   std::list<uint64_t> oracle;
 
-  oracle = read_file("oracle.txt");
+  oracle = read_file("oracle50.txt");
   auto it = oracle.begin();// + 61; /* +61 offset to start at 3s*/
 
   if (it == oracle.end()) {fprintf(stderr, "MUHAHAHHAHHAHAHAHA");}
 
-//  for (int i = 0; i < 2; i++) {
-//    it++;
-//  }
+//  for (int i = 0; i < 1; i++) {
+//  it++;
+// }
 
 
   int bytes;
@@ -98,11 +98,22 @@ int main( int argc, char *argv[] )
       bytes_to_send = 0;
     }
 
-    if (time_of_rate_adjustment <= timestamp())
-    {
+    //fprintf(stderr, "To Send: %d \n", bytes);
+
+//    if (test <= timestamp()) {bytes_to_send = 750;}
+
+
+    /* actually send, maybe */
+    if ( /*( bytes_to_send > 0 ) &&*/ ( time_of_next_transmission <= timestamp() ) ) {
+
       bytes = *it;
 
-      /* Update iterator pointer */
+      bytes_to_send = std::max(bytes - 50, 0);
+
+      fprintf(stderr, "To Send: %d \n", bytes);
+      /* How much to send in this tick */
+      //bytes_to_send = (bytes / new_rate_interval) * fallback_interval;
+
       if (it != oracle.end())
       {
         //int v = 1;
@@ -112,22 +123,6 @@ int main( int argc, char *argv[] )
       {
         fprintf(stderr, "Iterator Ended \n");
       }
-
-      time_of_rate_adjustment = std::max( timestamp() + new_rate_interval,
-                                            time_of_rate_adjustment );
-
-    }
-
-    fprintf(stderr, "To Send: %d \n", bytes);
-
-//    if (test <= timestamp()) {bytes_to_send = 750;}
-
-
-    /* actually send, maybe */
-    if ( /*( bytes_to_send > 0 ) &&*/ ( time_of_next_transmission <= timestamp() ) ) {
-
-      /* How much to send in this tick */
-      bytes_to_send = (bytes / 500) * fallback_interval;
 
       do {
 	int this_packet_size = std::min( 1400, bytes_to_send );
