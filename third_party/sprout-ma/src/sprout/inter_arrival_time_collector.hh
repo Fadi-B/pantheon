@@ -17,7 +17,7 @@ public:
     using Collector::writer;
 
     /* Curerntly does not have an impact */
-    static double const EWMA_WEIGHT = 1;
+    static constexpr double EWMA_WEIGHT = 1.0;
 
     InterArrivalTimeCollector(double tick_time)
     :Collector(tick_time)
