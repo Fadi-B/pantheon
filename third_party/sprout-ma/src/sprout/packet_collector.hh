@@ -43,7 +43,7 @@ public:
     double compute()
     {
 
-        fprintf(stderr, "Helper2: %f \n", helper_data);
+        //fprintf(stderr, "Helper2: %f \n", helper_data);
 
         int bits = MSS * BYTE_SIZE;
 
