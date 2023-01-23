@@ -71,6 +71,9 @@ private:
   /* Will hold minium RTT observed during the connection */
   uint16_t _MIN_RTT;
 
+  /* Will hold previous packet arrival time for inter arrival computation */
+  uint16_t _prev_arrival;
+
   CollectorManager _collector_manager;
 
 public:

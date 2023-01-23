@@ -33,17 +33,10 @@ public:
 
     }
 
-    void update(double inter_arrival_time, double __attribute((unused)))
+    void update(double timestamp, double __attribute((unused)))
     {
 
-        /* Will use less than 0 as indication of 'invalid' and so do not include it */
-        if (!(inter_arrival_time < 0))
-        {
-
-            helper_data.push_back(inter_arrival_time);
-
-        }
-        
+        helper_data.push_back(timestamp);
 
         return;
 
@@ -55,17 +48,27 @@ public:
         /* Used to compute the average */
         double sum_of_inter_arrival_times = 0;
 
-        /* Looping until next to last to ensure we do not go out of bounds */
-        for (auto it = helper_data.begin(); it != helper_data.begin(); it++)
-        {
-            
-            auto obj = *it;
+        auto iter = helper_data.begin();
 
-            sum_of_inter_arrival_times = sum_of_inter_arrival_times + obj;
+        uint16_t limit = helper_data.size() - 1; 
+
+        /* Looping until next to last to ensure we do not go out of bounds */
+        for (auto i = 0; i <= limit; i++)
+        {
+
+            double timestamp_1 = *iter;
+
+            /* Move to the sequential packet timestamp */
+            iter++;
+
+            double timestamp_2 = *iter;
+
+            /* Need to use a dedicated function for the difference - otherwise will break */
+            sum_of_inter_arrival_times = sum_of_inter_arrival_times + (timestamp_2 - timestamp_1);
 
         }
 
-        double inter_arrival_time = sum_of_inter_arrival_times / helper_data.size();
+        double inter_arrival_time = sum_of_inter_arrival_times / limit;
 
         double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time); 
 

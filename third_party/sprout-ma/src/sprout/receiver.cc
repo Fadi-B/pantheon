@@ -30,6 +30,7 @@ Receiver::Receiver()
     _collect_time( 0 ),
     _start_time_point( chrono::high_resolution_clock::now() ),
     _MIN_RTT( 1000000 ), /* Initialize to high value */
+    _prev_arrival( -1 ),
     _collector_manager(500)
 {
 
@@ -76,6 +77,17 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _score_time = std::max( _time + time_to_next, _score_time );
 
   uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
+  uint16_t inter_arrival_time = Network::timestamp_diff(timestamp_reception, _prev_arrival);
+  /* Check if starting value since we need at least two points */
+  if (_prev_arrival == -1)
+  {
+
+    _prev_arrival = timestamp_reception;
+
+    /* To indicate that we have not obtained two samples yet */
+    inter_arrival_time = -1;
+
+  }
 
   if (RTT < _MIN_RTT)
   {
@@ -84,7 +96,7 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
 
   }
 
-  _collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT);
+  _collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
 
 }
 
