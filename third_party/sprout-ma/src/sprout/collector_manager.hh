@@ -8,6 +8,8 @@
 #include "data_collector.hh"
 #include "rtt_grad_collector.hh"
 #include "packet_collector.hh"
+#include "inter_arrival_time_collector.hh"
+#include "queuing_delay_collector.hh"
 
 
 class CollectorManager
@@ -33,15 +35,21 @@ public:
         double current_time = getCurrentTime(_start_time_point);
         _collect_time = current_time + COLLECT_INTERVAL;
 
+        /* Initializing all the collectors */
 	    _rtt_grad_collector = new RTTGradCollector(COLLECT_INTERVAL);
         _packet_collector = new PacketCollector(COLLECT_INTERVAL);
+        _inter_arrival_collector = new InterArrivalTimeCollector(COLLECT_INTERVAL);
+        _queuing_delay_collector = new QueuingDelayCollector(COLLECT_INTERVAL);
 
+        /* Adding all of them to our collector set */
         collectors.push_back(_rtt_grad_collector);
         collectors.push_back(_packet_collector);
+        collectors.push_back(_inter_arrival_collector);
+        collectors.push_back(_queuing_delay_collector);
 
     }
 
-    void collectData(double packet_frac, uint64_t RTT, uint16_t timestamp_received)
+    void collectData(double packet_frac, uint64_t RTT, uint16_t timestamp_received, uint64_t min_rtt)
     {
         double current_time = getCurrentTime(_start_time_point);
 
@@ -77,7 +85,19 @@ public:
 		        (*itr)->update(packet_frac, 0);
 		        //fprintf(stderr, "Packet: %f\n", packet_frac);
 		        break;
-        	    default:
+
+                case Type::InterArrivalTime:
+                (*itr)->update(timestamp_received, 0); /* IMPORTANT: SHOULD MOST LIKELY CHANGE THE TIMESTAMP USED*/
+        	    
+                break;
+
+                case Type::QueueDelay:
+                (*itr)->update(RTT, min_rtt);
+
+                break;
+                
+                default:
+
 		        //Should really throw an exception
                 fprintf(stderr, "ERROR: %d \n", (*itr)->getType());
             }
@@ -103,6 +123,8 @@ private:
 
     RTTGradCollector *_rtt_grad_collector;
     PacketCollector *_packet_collector;
+    InterArrivalTimeCollector * _inter_arrival_collector;
+    QueuingDelayCollector * _queuing_delay_collector;
 
     std::list<Collector*> collectors;
 

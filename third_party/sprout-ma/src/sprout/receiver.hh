@@ -68,6 +68,9 @@ private:
 
   std::chrono::high_resolution_clock::time_point _start_time_point;
 
+  /* Will hold minium RTT observed during the connection */
+  uint16_t _MIN_RTT;
+
   CollectorManager _collector_manager;
 
 public:

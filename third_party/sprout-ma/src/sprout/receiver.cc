@@ -29,6 +29,7 @@ Receiver::Receiver()
     _ewma_rate_estimate( 1 ),
     _collect_time( 0 ),
     _start_time_point( chrono::high_resolution_clock::now() ),
+    _MIN_RTT( 1000000 ), /* Initialize to high value */
     _collector_manager(500)
 {
 
@@ -75,7 +76,15 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _score_time = std::max( _time + time_to_next, _score_time );
 
   uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
-  _collector_manager.collectData(len/1400, RTT, timestamp_reception);
+
+  if (RTT < _MIN_RTT)
+  {
+
+    _MIN_RTT = RTT;
+
+  }
+
+  _collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT);
 
 }
 
