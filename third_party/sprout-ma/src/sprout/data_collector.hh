@@ -4,7 +4,7 @@
 #include <list>
 #include "filewriter.hh"
 
-enum class Type {Base, RTTGrad, Packet};
+enum class Type {Base, RTTGrad, Packet, QueueDelay, InterArrivalTime};
 
 class Collector
 {
