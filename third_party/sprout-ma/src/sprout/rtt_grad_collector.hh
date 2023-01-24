@@ -24,7 +24,7 @@ public:
     /* Currently set to very high as we will consider all packets for now */
     static const int MAX_RTT = 1000000000; /* Default 50000 in Sprout smoothed RTT calculation */
 
-    static constexpr double LOW_PASS_FILTER_CUT_OFF = 0.04;
+    static constexpr double LOW_PASS_FILTER_CUT_OFF = 0.015;
 
     RTTGradCollector(double tick_time)
     :Collector(tick_time)
