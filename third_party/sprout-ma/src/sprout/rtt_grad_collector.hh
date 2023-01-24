@@ -20,7 +20,11 @@ public:
 
     static const int RTT_INDEX = 0;
     static const int RECEPTION_INDEX = 1;
-    //static const int MAX_RTT = 50000; /* Sprout filters packets with larger RTT in smoother RTT calculation */
+
+    /* Currently set to very high as we will consider all packets for now */
+    static const int MAX_RTT = 1000000000; /* Default 50000 in Sprout smoothed RTT calculation */
+
+    static constexpr double LOW_PASS_FILTER_CUT_OFF = 0.04;
 
     RTTGradCollector(double tick_time)
     :Collector(tick_time)
@@ -38,10 +42,12 @@ public:
     void update(double RTT, double receptionTime) 
     {
 
-        //if (RTT < MAX_RTT)
-        //{
+        if (RTT < MAX_RTT)
+        {
+
             helper_data.push_back( tuple<double, double>(RTT, receptionTime) );
-        //}
+
+        }
 
         return;
 
@@ -114,6 +120,12 @@ public:
 
 	/* IMPORTANT: Will return NAN if no data observed or no unique solution */
         double slope = (size*sumXY - sumX*sumY) / (size*sumX_squared - sumX*sumX);
+
+        /* This is employed to avoid network jitter that can be misleading about the measurement */
+        if (slope < LOW_PASS_FILTER_CUT_OFF)
+        {
+            slope = 0;
+        }
 
         /* Update observed slopes */
         data.push_back(slope);
