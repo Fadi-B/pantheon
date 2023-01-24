@@ -49,7 +49,7 @@ public:
 
     }
 
-    void collectData(double packet_frac, uint64_t RTT, uint16_t timestamp_received, uint64_t min_rtt)
+    void collectData(double packet_frac, uint64_t RTT, uint64_t timestamp_received, uint64_t min_rtt, uint64_t inter_arrival_time)
     {
         double current_time = getCurrentTime(_start_time_point);
 
@@ -87,7 +87,7 @@ public:
 		        break;
 
                 case Type::InterArrivalTime:
-                (*itr)->update(timestamp_received, 0); /* IMPORTANT: SHOULD MOST LIKELY CHANGE THE TIMESTAMP USED*/
+                (*itr)->update(inter_arrival_time, 0); /* IMPORTANT: SHOULD MOST LIKELY CHANGE THE TIMESTAMP USED*/
         	    
                 break;
 

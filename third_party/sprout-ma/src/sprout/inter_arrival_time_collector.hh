@@ -56,7 +56,7 @@ public:
         double sum_of_inter_arrival_times = 0;
 
         /* Looping until next to last to ensure we do not go out of bounds */
-        for (auto it = helper_data.begin(); it != helper_data.begin(); it++)
+        for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
             
             auto obj = *it;

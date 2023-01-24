@@ -35,6 +35,10 @@ public:
 
     }
 
+    /* NOTE: I am skeptical against what would happen if we get the odd super large RTTs
+      
+       Does not seem to have appeared yet, but keep an eye as we might have to add an RTT check
+    */
     void update(double RTT, double min_rtt)
     {
 

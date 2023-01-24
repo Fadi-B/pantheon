@@ -89,6 +89,9 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
 
   }
 
+  /* Ensure we update the previous estimate of packet arrival */
+  _prev_arrival = timestamp_reception;
+
   if (RTT < _MIN_RTT)
   {
 
