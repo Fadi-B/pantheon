@@ -20,6 +20,7 @@ public:
 
     static const int RTT_INDEX = 0;
     static const int RECEPTION_INDEX = 1;
+    //static const int MAX_RTT = 50000; /* Sprout filters packets with larger RTT in smoother RTT calculation */
 
     RTTGradCollector(double tick_time)
     :Collector(tick_time)
@@ -37,7 +38,10 @@ public:
     void update(double RTT, double receptionTime) 
     {
 
-        helper_data.push_back( tuple<double, double>(RTT, receptionTime) );
+        //if (RTT < MAX_RTT)
+        //{
+            helper_data.push_back( tuple<double, double>(RTT, receptionTime) );
+        //}
 
         return;
 
