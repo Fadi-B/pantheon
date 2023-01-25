@@ -6,6 +6,7 @@
 
 //#include "filewriter.hh"
 #include "data_collector.hh"
+#include "cmath"
 
 using namespace std;
 
@@ -122,7 +123,7 @@ public:
         double slope = (size*sumXY - sumX*sumY) / (size*sumX_squared - sumX*sumX);
 
         /* This is employed to avoid network jitter that can be misleading about the measurement */
-        if (slope < LOW_PASS_FILTER_CUT_OFF)
+        if (abs(slope) < LOW_PASS_FILTER_CUT_OFF)
         {
             slope = 0;
         }
