@@ -83,7 +83,7 @@ schemes:
     name: Sprout-SEWMA
     color: silver
     marker: 'h'
-  tcp-beta:
-    name: tcp-beta
-    color: magenta
-    marker: 'o'
+  sprout-oracle:
+    name: Sprout-Oracle
+    color: violet
+    marker: 'D'
