@@ -87,3 +87,7 @@ schemes:
     name: Sprout-Oracle
     color: violet
     marker: 'D'
+  sprout-fadi:
+    name: Sprout-Fadi
+    color: green
+    marker: '<'
