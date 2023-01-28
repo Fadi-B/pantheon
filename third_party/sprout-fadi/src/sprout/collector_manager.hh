@@ -11,11 +11,19 @@
 #include "inter_arrival_time_collector.hh"
 #include "queuing_delay_collector.hh"
 
+#include <Eigen/Dense>
+
 
 class CollectorManager
 {
 
 public:
+
+    static const int DIM = 5;
+    static uint16_t WINDOW_LENGTH;
+
+    //typedef Eigen::Matrix<double, DIM, 1> Vector;
+    //typedef Eigen::Matrix<double, DIM, DIM> Matrix;
 
     static double getCurrentTime( std::chrono::high_resolution_clock::time_point &start_time )
     {
@@ -25,10 +33,11 @@ public:
         return duration_cast<duration<double>>(cur_time - start_time).count()*1000;
     }
 
-    CollectorManager(double collectInterval) /* in ms */
+    CollectorManager(double collectInterval, uint16_t window_length) /* in ms */
     {
 
         COLLECT_INTERVAL = collectInterval;
+        WINDOW_LENGTH = window_length;
 
         _start_time_point = chrono::high_resolution_clock::now();
 
@@ -114,10 +123,56 @@ public:
 
     }
 
+    /**
+     * @brief Get the Congestion Signals History o
+     * 
+     * @param window_length 
+     * @return Matrix 
+     */
+    Eigen::Matrix<double, WINDOW_LENGTH, DIM> getCongestionSignalsHistory()
+    {
+
+        Matrix congestion_history;
+
+        for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
+        {
+
+            std::list< double > data = (*itr)->getData();
+
+            uint16_t counter = 1;
+
+            for (std::list<double>::reverse_iterator revitr=data.rbegin(); revitr!=data.rend(); revitr++ )
+            {
+
+                if (counter < window_length)
+                {
+
+
+
+                }
+                else
+                {
+                    break;
+                }
+
+                counter = counter + 1;
+                
+
+            }
+
+
+
+        }
+
+
+
+    }
+
 
 private:
 
     double COLLECT_INTERVAL;
+
     std::chrono::high_resolution_clock::time_point _start_time_point;
     double _collect_time;
 

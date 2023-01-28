@@ -1,29 +1,33 @@
-#pragma once
-
-
 #include <Eigen/Dense>
+#include "assert.h"
+#include <stdio.h>
 
 class KF
 {
 
 public:
 
-    static const int iB = 0;
-    static const int iRTTG = 1;
-    static const int iD = 2;
+    static const int iBias = 0;
+    static const int iBand = 1;
+    static const int iRTTG = 2;
+    static const int iQueueDelay = 3;
+    static const int iInterArrival = 4;
 
-    static const int DIM = 3;
+    /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival]*/
+    static const int DIM = 5;
 
     typedef Eigen::Matrix<double, DIM, 1> Vector;
     typedef Eigen::Matrix<double, DIM, DIM> Matrix;
 
-    KF(double initBandwidth, double initRTTGrad, double initDelay)
+    KF(double initBandwidth, double initRTTGrad, double initQueueDelay, double initInterArrival)
     {
 
         /* State Initialization */
-        _mean(iB) = initBandwidth;
+	_mean(iBias) = 1;	   //Will always be 1
+        _mean(iBand) = initBandwidth; //
         _mean(iRTTG) = initRTTGrad;
-        _mean(iD) = initDelay;
+        _mean(iQueueDelay) = initQueueDelay;
+	_mean(iInterArrival) = initInterArrival;
 
         _cov.setIdentity();
 
@@ -34,12 +38,15 @@ public:
         H = Matrix::Constant(1); // SIZE: 1 x 3
     }
 
-    void predict(double dt)
+    void predict(double dt, Matrix Q)
     {
+
+	/* Checking correct dimensions */
+	//assert(  );
 
         const Vector new_mean = F * _mean;
 
-        const Matrix newP = F * _cov * F.transpose();
+        const Matrix newP = F * _cov * F.transpose() + Q;
 
         _cov = newP;
         _mean = new_mean;
@@ -55,9 +62,26 @@ public:
         const Matrix K = kalman_gain(measurementVar);
 
         Vector new_mean = _mean + K * y;
-
-
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
+
+	new_mean[iBias] = 1; // Bias
+
+
+	/* Max function does not seem to work so will be doing it manually */
+	double throughput = measurement[iBand];
+
+	if (throughput < 0)
+	{
+	  new_mean[iBand] = 0;
+	}
+	else
+	{
+	  new_mean[iBand] = throughput;
+	}
+
+	new_mean[iRTTG] = measurement[iRTTG]; // RTT Gradient
+	new_mean[iQueueDelay] = measurement[iQueueDelay]; // Queuing Delay
+	new_mean[iInterArrival] = measurement[iInterArrival]; // Inter arrival time
 
         _cov = new_cov;
         _mean = new_mean;
@@ -66,13 +90,11 @@ public:
 
     }
 
-
-
     Vector innovation(Vector measurement)
     {
         Vector innov = measurement - H * _mean;
 
-        return innov; //innov;
+        return innov;
     }
 
     Matrix innovation_cov(Matrix R)
@@ -92,7 +114,7 @@ public:
         return K;
     }
 
-    void reset() 
+    void reset()
     {
         //TO DO
         return;
@@ -112,7 +134,7 @@ public:
 
     double bandwidth() const
     {
-        return _mean(iB);
+        return _mean(iBand);
     }
 
     double RTTGrad() const
@@ -122,7 +144,7 @@ public:
 
     double delay() const
     {
-        return _mean(iD);
+        return _mean(iQueueDelay);
     }
  
 private:
