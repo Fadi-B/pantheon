@@ -23,11 +23,11 @@ public:
     {
 
         /* State Initialization */
-	_mean(iBias) = 1;	   //Will always be 1
+	    _mean(iBias) = 1;	   //Will always be 1
         _mean(iBand) = initBandwidth; //
         _mean(iRTTG) = initRTTGrad;
         _mean(iQueueDelay) = initQueueDelay;
-	_mean(iInterArrival) = initInterArrival;
+	    _mean(iInterArrival) = initInterArrival;
 
         _cov.setIdentity();
 
@@ -35,14 +35,14 @@ public:
         F = Matrix::Identity(DIM, DIM);
 
         /* Noiseless connection between measurement and state initialization */
-        H = Matrix::Constant(1); // SIZE: 1 x 3
+        H = Matrix::Identity(DIM, DIM); // For now we assume a unity connection
     }
 
-    void predict(double dt, Matrix Q)
+    void predict(Matrix Q)
     {
 
-	/* Checking correct dimensions */
-	//assert(  );
+	    /* Checking correct dimensions */
+	    //assert(  );
 
         const Vector new_mean = F * _mean;
 
@@ -64,24 +64,24 @@ public:
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
-	new_mean[iBias] = 1; // Bias
+	    new_mean[iBias] = 1; // Bias
 
 
-	/* Max function does not seem to work so will be doing it manually */
-	double throughput = measurement[iBand];
+	    /* Max function does not seem to work so will be doing it manually */
+	    double throughput = measurement[iBand];
 
-	if (throughput < 0)
-	{
-	  new_mean[iBand] = 0;
-	}
-	else
-	{
-	  new_mean[iBand] = throughput;
-	}
+	    if (throughput < 0)
+    	{
+	      new_mean[iBand] = 0;
+	    }
+	    else
+	    {
+	    new_mean[iBand] = throughput;
+	    }
 
-	new_mean[iRTTG] = measurement[iRTTG]; // RTT Gradient
-	new_mean[iQueueDelay] = measurement[iQueueDelay]; // Queuing Delay
-	new_mean[iInterArrival] = measurement[iInterArrival]; // Inter arrival time
+	    new_mean[iRTTG] = measurement[iRTTG]; // RTT Gradient
+	    new_mean[iQueueDelay] = measurement[iQueueDelay]; // Queuing Delay
+	    new_mean[iInterArrival] = measurement[iInterArrival]; // Inter arrival time
 
         _cov = new_cov;
         _mean = new_mean;
@@ -112,6 +112,18 @@ public:
         Matrix K = _cov * H.transpose() * S.inverse();
 
         return K;
+    }
+
+    void setF(Matrix newF)
+    {
+
+        F = newF;
+
+    }
+
+    void setCov(Matrix newCov)
+    {
+        _cov = newCov;
     }
 
     void reset()
