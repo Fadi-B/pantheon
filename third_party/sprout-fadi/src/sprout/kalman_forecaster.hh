@@ -3,6 +3,9 @@
 #include "assert.h"
 #include "kalman_filter.hh"
 
+#include "packet_collector.hh"
+#include <list>
+
 class KFForecaster : public KF
 {
 
@@ -37,15 +40,39 @@ public:
 
     }
 
-    void forecast()
+    void forecast(uint8_t tick_number)
     {
 
-        state.predict(Q);
+        for (int i=0; i < tick_number; i++)
+        {
+
+            state.predict(Q);
+
+            if (bytes_to_be_drained.size() == 0)
+            {
+
+                bytes_to_be_drained.push_back(getForecastedBytes());
+
+            }
+            else
+            {
+
+                uint64_t cum_drained = *(bytes_to_be_drained.rbegin()) + getForecastedBytes();
+
+                bytes_to_be_drained.push_back(cum_drained);
+
+            }
+
+        }
 
     }
 
     void correctForecast(KF::Vector observed)
     {
+
+        /* Ensure we convert the packets seen into Mbits/s as we are working with that */
+        //double packets_received = observed(KF::iBand, 1);
+        //observed(KF::iBand, 1) = PacketCollector::to_bits_per_sec(packets_received);
 
         state.update(observed, R);
 
@@ -61,6 +88,16 @@ public:
 
         return bytes;
 
+    }
+
+    std::list<uint64_t> getBytesToBeDrained()
+    {
+        return bytes_to_be_drained;
+    }
+
+    void clearForecast()
+    {
+        bytes_to_be_drained.clear();
     }
 
     void setQ(KF::Matrix newQ)
@@ -87,6 +124,8 @@ private:
 
     /* Forecast Model that we have learnt offline */
     KF::Vector forecastModel;
+
+    std::list<uint64_t> bytes_to_be_drained;
 
 
     /* Initialization functions */

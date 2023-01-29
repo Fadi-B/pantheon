@@ -14,6 +14,7 @@
 #include <chrono>
 
 #include "collector_manager.hh"
+#include "kalman_forecaster.hh"
 
 class Receiver
 {
@@ -75,6 +76,8 @@ private:
   uint16_t _prev_arrival;
 
   CollectorManager _collector_manager;
+
+  KFForecaster _KFforecaster;
 
 public:
 

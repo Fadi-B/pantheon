@@ -13,6 +13,8 @@
 
 #include "network.h"
 
+#include "kalman_filter.hh"
+
 using namespace std;
 
 Receiver::Receiver()
@@ -31,7 +33,8 @@ Receiver::Receiver()
     _start_time_point( chrono::high_resolution_clock::now() ),
     _MIN_RTT( 1000000 ), /* Initialize to high value */
     _prev_arrival( -1 ),
-    _collector_manager(500)
+    _collector_manager(500),
+    _KFforecaster(36, 0, 0, 0)
 {
 
   double cur = CollectorManager::getCurrentTime(_start_time_point);
@@ -56,10 +59,29 @@ void Receiver::advance_to( const uint64_t time )
 
   while ( _time + TICK_LENGTH < time ) {
 
+    _KFforecaster.forecast(1);
+
     if ( (_time >= _score_time) || (_count_this_tick > 0) ) {
 
-      const double alpha = 1.0;
-      _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
+       /* Currently 1 x 5 */
+      CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory();
+
+      int rounded_bytes = int( _count_this_tick + 0.5 );
+
+      if ( _count_this_tick > 0 && _count_this_tick < 1)
+      {
+
+        rounded_bytes = 1;
+
+        /* Ensure we update the rate estimation in this case*/
+        measurement(1, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes);
+
+      }
+
+      _KFforecaster.correctForecast(measurement.transpose());
+
+      //const double alpha = 1.0;
+      //_ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
 
       _count_this_tick = 0;
 
@@ -119,12 +141,20 @@ Sprout::DeliveryForecast Receiver::forecast( void )
 
     int tick_number = 1;
 
+    auto iter = _KFforecaster.getBytesToBeDrained().begin();
+
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
-      _cached_forecast.add_counts(_ewma_rate_estimate * tick_number);
-      tick_number++;
+
+      //Note: For now we have not added any uncertainty bounds
+      _cached_forecast.add_counts( *iter );
+      
+      iter++;
 
     }
+
+    /* Ensure we clear our previous forecast - Will be irrelevant for the future */
+    _KFforecaster.clearForecast();
 
     return _cached_forecast;
   }
