@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef COLLECTOR_MANAGER_HPP
 #define COLLECTOR_MANAGER_HPP
 
@@ -32,7 +32,7 @@ public:
         return duration_cast<duration<double>>(cur_time - start_time).count()*1000;
     }
 
-    CollectorManager(double collectInterval, uint16_t window_length) /* in ms */
+    CollectorManager(double collectInterval) /* in ms */
     {
 
         COLLECT_INTERVAL = collectInterval;

@@ -6,17 +6,17 @@ if BUILD_EXAMPLES
 endif
 
 ntester_SOURCES = ntester.cc
-ntester_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS)
+ntester_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../statesync -I$(srcdir)/../terminal -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS) -I../extern_utils/eigen-3.3.9
 ntester_LDADD = ../statesync/libmoshstatesync.a ../network/libmoshnetwork.a ../sprout/libsprout.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(LIBUTIL) -lm $(protobuf_LIBS)  $(OPENSSL_LIBS)
 
 sproutbt2_SOURCES = sproutbt2.cc
-sproutbt2_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS)
+sproutbt2_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS) -I../extern_utils/eigen-3.3.9
 sproutbt2_LDADD = ../network/libmoshnetwork.a ../sprout/libsprout.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(LIBUTIL) -lm $(protobuf_LIBS)  $(OPENSSL_LIBS)
 
 cellproxy_SOURCES = cellproxy.cc
-cellproxy_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS)
+cellproxy_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS) -I../extern_utils/eigen-3.3.9
 cellproxy_LDADD = ../network/libmoshnetwork.a ../sprout/libsprout.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(LIBUTIL) -lm $(protobuf_LIBS)  $(OPENSSL_LIBS)
 
 cellsim_SOURCES = cellsim.cc
-cellsim_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS)
+cellsim_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../network -I$(srcdir)/../crypto -I$(srcdir)/../sprout -I../protobufs $(protobuf_CFLAGS) -I../extern_utils/eigen-3.3.9
 cellsim_LDADD = ../network/libmoshnetwork.a ../sprout/libsprout.a ../crypto/libmoshcrypto.a ../protobufs/libmoshprotos.a ../util/libmoshutil.a $(LIBUTIL) -lm $(protobuf_LIBS)  $(OPENSSL_LIBS)

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../crypto -I../protobufs $(protobuf_CFLAGS) -I$(srcdir)/../sprout
+AM_CPPFLAGS = -I$(srcdir)/../util -I$(srcdir)/../crypto -I../protobufs $(protobuf_CFLAGS) -I$(srcdir)/../sprout -I../extern_utils/eigen-3.3.9
 AM_CXXFLAGS = $(WARNING_CXXFLAGS) $(PICKY_CXXFLAGS) $(HARDEN_CFLAGS) $(MISC_CXXFLAGS)
 
 noinst_LIBRARIES = libmoshnetwork.a
