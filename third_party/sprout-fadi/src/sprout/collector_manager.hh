@@ -12,18 +12,17 @@
 #include "queuing_delay_collector.hh"
 
 #include <Eigen/Dense>
-
+#include "kalman_filter.hh"
 
 class CollectorManager
 {
 
 public:
 
-    static const int DIM = 5;
-    static uint16_t WINDOW_LENGTH;
+    static const int WINDOW_LENGTH = 1; /* Will start off with 1 window length for prototyping */
 
-    //typedef Eigen::Matrix<double, DIM, 1> Vector;
-    //typedef Eigen::Matrix<double, DIM, DIM> Matrix;
+    typedef Eigen::Matrix<double, KF::DIM, 1> Vector;
+    typedef Eigen::Matrix<double, WINDOW_LENGTH, KF::DIM> Matrix;
 
     static double getCurrentTime( std::chrono::high_resolution_clock::time_point &start_time )
     {
@@ -37,7 +36,6 @@ public:
     {
 
         COLLECT_INTERVAL = collectInterval;
-        WINDOW_LENGTH = window_length;
 
         _start_time_point = chrono::high_resolution_clock::now();
 
@@ -45,16 +43,16 @@ public:
         _collect_time = current_time + COLLECT_INTERVAL;
 
         /* Initializing all the collectors */
-	    _rtt_grad_collector = new RTTGradCollector(COLLECT_INTERVAL);
         _packet_collector = new PacketCollector(COLLECT_INTERVAL);
-        _inter_arrival_collector = new InterArrivalTimeCollector(COLLECT_INTERVAL);
+	    _rtt_grad_collector = new RTTGradCollector(COLLECT_INTERVAL);
         _queuing_delay_collector = new QueuingDelayCollector(COLLECT_INTERVAL);
+        _inter_arrival_collector = new InterArrivalTimeCollector(COLLECT_INTERVAL);
 
         /* Adding all of them to our collector set */
-        collectors.push_back(_rtt_grad_collector);
         collectors.push_back(_packet_collector);
-        collectors.push_back(_inter_arrival_collector);
+        collectors.push_back(_rtt_grad_collector);
         collectors.push_back(_queuing_delay_collector);
+        collectors.push_back(_inter_arrival_collector);
 
     }
 
@@ -129,25 +127,43 @@ public:
      * @param window_length 
      * @return Matrix 
      */
-    Eigen::Matrix<double, WINDOW_LENGTH, DIM> getCongestionSignalsHistory()
+    Matrix getCongestionSignalsHistory()
     {
 
         Matrix congestion_history;
+
+        congestion_history(0, KF::iBias) = 1;
+
+        /* Note: Collectors will be looped over in the order
+         *
+         *        1. Packet Collector
+         *        2. RTT Gradient Collector
+         *        3. Queuing Delay Collector
+         *        4. Inter Arrival Collector
+         * 
+         * Note: I have done this in the order that I was designing the state-space model in python
+         * 
+         */
+
+        uint16_t column_index = 1; /* Starts at 1 since we have already intialized the bias column */
 
         for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
         {
 
             std::list< double > data = (*itr)->getData();
 
-            uint16_t counter = 1;
+            uint16_t row_index = 0;
 
+            /* We are reverse iterating as we want to look back on the past to do our forecast */
             for (std::list<double>::reverse_iterator revitr=data.rbegin(); revitr!=data.rend(); revitr++ )
             {
 
-                if (counter < window_length)
+                auto obj = *revitr;
+
+                if (row_index < WINDOW_LENGTH)
                 {
 
-
+                    congestion_history(row_index, column_index) = obj;
 
                 }
                 else
@@ -155,16 +171,15 @@ public:
                     break;
                 }
 
-                counter = counter + 1;
+                row_index = row_index + 1;
                 
-
             }
 
-
+            column_index = column_index + 1;
 
         }
 
-
+        return congestion_history;
 
     }
 
@@ -172,7 +187,6 @@ public:
 private:
 
     double COLLECT_INTERVAL;
-
     std::chrono::high_resolution_clock::time_point _start_time_point;
     double _collect_time;
 
