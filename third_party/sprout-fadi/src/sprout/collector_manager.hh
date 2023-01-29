@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef COLLECTOR_MANAGER_HPP
 #define COLLECTOR_MANAGER_HPP

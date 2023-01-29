@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef RECEIVER_HH
 #define RECEIVER_HH
 

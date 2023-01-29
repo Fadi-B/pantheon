@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Eigen/Dense>
 #include <stdio.h>
 #include "assert.h"
