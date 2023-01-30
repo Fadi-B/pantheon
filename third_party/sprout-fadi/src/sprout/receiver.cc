@@ -74,7 +74,7 @@ void Receiver::advance_to( const uint64_t time )
         rounded_bytes = 1;
 
         /* Ensure we update the rate estimation in this case*/
-        measurement(1, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes);
+        measurement(1, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
 
       }
 

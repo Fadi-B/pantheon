@@ -8,14 +8,14 @@
 #include "packet_collector.hh"
 #include <list>
 
-class KFForecaster : public KF
+class KFForecaster
 {
 
 public:
 
 
-    using KF::DIM;
-    using KF::Matrix;
+    //using namespace KF::DIM;
+    //using namespace KF;
 
     static const uint8_t bits = 8;
     static const uint16_t ms_per_sec = 500; /* We should be careful with this one as we are forecasting 20ms into the future*/
@@ -29,7 +29,7 @@ public:
         /* Initialize the transition model */
         initForecastModel();
 
-        Matrix F = Matrix::Identity(DIM, DIM);
+        KF::Matrix F = KF::Matrix::Identity(KF::DIM, KF::DIM);
         F.row(iModel) = forecastModel.transpose(); //Slightly unsure if this would work soshould confirm
 
         /* Note: Uncertainty Matrix is initialized to identity in KF class - No need to set it */

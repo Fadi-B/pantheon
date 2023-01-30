@@ -184,6 +184,11 @@ public:
 
     }
 
+    double getTickTime()
+    {
+        return COLLECT_INTERVAL;
+    }
+
 
 private:
 

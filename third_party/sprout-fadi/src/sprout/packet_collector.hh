@@ -19,14 +19,14 @@ public:
     static const int MSS = 1500;     /* Bytes */
     static const int BYTE_SIZE = 8;  /* Bits */
 
-    static double to_bits_per_sec(double packets)
+    static double to_bits_per_sec(double packets, double tick_time)
     {
 
         int bits = MSS * BYTE_SIZE;
 
         double total_bits = packets * bits;
 
-        double bits_per_sec = total_bits / (TICK_TIME*1000);
+        double bits_per_sec = total_bits / (tick_time*1000);
 
         return bits_per_sec;
 
