@@ -14,8 +14,8 @@ class KFForecaster
 public:
 
 
-    //using namespace KF::DIM;
-    //using namespace KF;
+    //using KF::DIM;
+    //using KF::Matrix;
 
     static const uint8_t bits = 8;
     static const uint16_t ms_per_sec = 500; /* We should be careful with this one as we are forecasting 20ms into the future*/
@@ -45,23 +45,25 @@ public:
     void forecast(uint8_t tick_number)
     {
 
+        int size = sizeof(bytes_to_be_drained) / (8);
+
         for (int i=0; i < tick_number; i++)
         {
 
             state.predict(Q);
 
-            if (bytes_to_be_drained.size() == 0)
+            if (size == 0)
             {
 
-                bytes_to_be_drained.push_back(getForecastedBytes());
+                bytes_to_be_drained[i] = (getForecastedBytes());
 
             }
             else
             {
 
-                uint64_t cum_drained = *(bytes_to_be_drained.rbegin()) + getForecastedBytes();
+                //double cum_drained = *(bytes_to_be_drained.rbegin()) + getForecastedBytes();
 
-                bytes_to_be_drained.push_back(cum_drained);
+                bytes_to_be_drained[i] = 2;
 
             }
 
@@ -80,19 +82,19 @@ public:
 
     }
 
-    uint64_t getForecastedBytes()
+    double getForecastedBytes()
     {
 
         /* Stored in Mbits/s */
         double rate = state.mean()(KF::iBand);
 
-        uint64_t bytes = ((ms_per_sec * 1000) * rate) / bits;
+        double bytes = ((ms_per_sec * 1000) * rate) / bits;
 
         return bytes;
 
     }
 
-    std::list<uint64_t> getBytesToBeDrained()
+    double * getBytesToBeDrained()
     {
         return bytes_to_be_drained;
     }
@@ -127,7 +129,7 @@ private:
     /* Forecast Model that we have learnt offline */
     KF::Vector forecastModel;
 
-    std::list<uint64_t> bytes_to_be_drained;
+    double bytes_to_be_drained[8];
 
 
     /* Initialization functions */

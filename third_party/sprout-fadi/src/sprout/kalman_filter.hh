@@ -1,4 +1,4 @@
-#pragma once //Very important - Otherwise get class redefinition error
+#pragma once
 
 #include <Eigen/Dense>
 #include "assert.h"

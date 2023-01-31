@@ -59,11 +59,11 @@ void Receiver::advance_to( const uint64_t time )
 
   while ( _time + TICK_LENGTH < time ) {
 
-    _KFforecaster.forecast(1);
+    _KFforecaster.forecast(1); //Works
 
     if ( (_time >= _score_time) || (_count_this_tick > 0) ) {
 
-       /* Currently 1 x 5 */
+       /* Currently 1 x 5 */ //Works
       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory();
 
       int rounded_bytes = int( _count_this_tick + 0.5 );
@@ -73,8 +73,9 @@ void Receiver::advance_to( const uint64_t time )
 
         rounded_bytes = 1;
 
-        /* Ensure we update the rate estimation in this case*/
-        measurement(1, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
+        /* Ensure we update the rate estimation in this case*/ //This is the broken one
+	//double f = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
+        measurement(0, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
 
       }
 
@@ -90,6 +91,10 @@ void Receiver::advance_to( const uint64_t time )
     }
     _time += TICK_LENGTH;
   }
+
+  /* Ensure we clear our stored forecast as we just wanted to advance to the current time */
+  _KFforecaster.clearForecast();
+
 }
 
 void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception )
@@ -139,19 +144,36 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     _cached_forecast.set_time( _time );
     _cached_forecast.clear_counts();
 
+    /* Clear it as we will be doing a new forecast now */
+    _KFforecaster.clearForecast();
+
+    /* Forecasting 8 ticks as that is what Sprout does */
+    _KFforecaster.forecast(8);
+
     int tick_number = 1;
 
     auto iter = _KFforecaster.getBytesToBeDrained().begin();
 
+    fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
+
+    fprintf(stderr, "Start\n");
+    int tick = 1;
+
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
 
+      double expected_drainage = *iter;
+      fprintf(stderr, "Tick: %d \n", tick);
+      //fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
-      _cached_forecast.add_counts( *iter );
-      
+      _cached_forecast.add_counts( 5 );
+
       iter++;
+      tick++;
 
     }
+
+    fprintf(stderr, "END \n");
 
     /* Ensure we clear our previous forecast - Will be irrelevant for the future */
     _KFforecaster.clearForecast();
