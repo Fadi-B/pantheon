@@ -55,7 +55,7 @@ public:
             if (size == 0)
             {
 
-                bytes_to_be_drained[i] = (getForecastedBytes());
+                bytes_to_be_drained[i] = getForecastedBytes();
 
             }
             else
@@ -63,7 +63,7 @@ public:
 
                 //double cum_drained = *(bytes_to_be_drained.rbegin()) + getForecastedBytes();
 
-                bytes_to_be_drained[i] = 2;
+                bytes_to_be_drained[i] = bytes_to_be_drained[i - 1] + getForecastedBytes();
 
             }
 
@@ -101,7 +101,17 @@ public:
 
     void clearForecast()
     {
-        bytes_to_be_drained.clear();
+
+	    int size = sizeof(bytes_to_be_drained) / (8);
+
+        for (int i = 0; i < size; i++)
+
+	    {
+
+	        bytes_to_be_drained[i] = 0;
+
+	    }
+
     }
 
     void setQ(KF::Matrix newQ)

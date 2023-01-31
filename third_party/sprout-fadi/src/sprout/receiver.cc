@@ -92,7 +92,6 @@ void Receiver::advance_to( const uint64_t time )
     _time += TICK_LENGTH;
   }
 
-  /* Ensure we clear our stored forecast as we just wanted to advance to the current time */
   _KFforecaster.clearForecast();
 
 }
@@ -144,31 +143,29 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     _cached_forecast.set_time( _time );
     _cached_forecast.clear_counts();
 
-    /* Clear it as we will be doing a new forecast now */
     _KFforecaster.clearForecast();
 
-    /* Forecasting 8 ticks as that is what Sprout does */
-    _KFforecaster.forecast(8);
+    _KFforecaster.forecast(15);
 
     int tick_number = 1;
 
-    auto iter = _KFforecaster.getBytesToBeDrained().begin();
+    double * fadi =  _KFforecaster.getBytesToBeDrained();
 
-    fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
+    //fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
 
     fprintf(stderr, "Start\n");
-    int tick = 1;
+    int tick = 0;
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
-
-      double expected_drainage = *iter;
-      fprintf(stderr, "Tick: %d \n", tick);
-      //fprintf(stderr, "Drain: %f \n", expected_drainage);
+      //fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
+      //if (iter == _KFforecaster.getBytesToBeDrained().end()) {fprintf(stderr, "Mugi \n");}
+      double expected_drainage = fadi[tick];
+      //fprintf(stderr, "Tick: %d \n", tick);
+      fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
-      _cached_forecast.add_counts( 5 );
+      _cached_forecast.add_counts( 5/*expected_drainage*/ );
 
-      iter++;
       tick++;
 
     }
