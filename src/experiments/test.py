@@ -740,7 +740,7 @@ class Test(object):
         # write runtimes and clock offsets to file
         self.record_time_stats()
 
-        sys.stderr.write('Done testing %s\n' % self.cc)
+        sys.stderr.write('Done testing %s\n\n\n' % self.cc)
 
 
 def run_tests(args):

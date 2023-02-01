@@ -22,7 +22,7 @@ def main():
     args = arg_parser.receiver_first()
 
     if args.option == 'deps':
-        print 'iperf'
+        print 'iperf3'
         return
 
     if args.option == 'setup_after_reboot':
@@ -30,12 +30,12 @@ def main():
         return
 
     if args.option == 'receiver':
-        cmd = ['iperf', '-Z', 'bbr', '-s', '-p', args.port]
+        cmd = ['iperf3', '-s', '-p', args.port]
         check_call(cmd)
         return
 
     if args.option == 'sender':
-        cmd = ['iperf', '-Z', 'bbr', '-c', args.ip, '-p', args.port,
+        cmd = ['iperf3', '-C', 'bbr', '-c', args.ip, '-p', args.port,
                '-t', '75']
         check_call(cmd)
         return
