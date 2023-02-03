@@ -1,23 +1,8 @@
 #!/usr/bin/env python
 
-from subprocess import check_call, call
+from subprocess import check_call
 
 import arg_parser
-import context
-from helpers import kernel_ctl
-import sys
-
-
-def setup_oracle():
-    # Compile and install the oracle
-    if call('/local/repository/oracle_bbr/deploy_oracle.sh', shell=True) != 0:
-        sys.exit('Error deploying oracle')
-
-    # add bbr to kernel-allowed congestion control list
-    kernel_ctl.enable_congestion_control('oracle')
-
-    # check if qdisc is fq
-    kernel_ctl.check_qdisc('fq')
 
 
 def main():
@@ -28,7 +13,6 @@ def main():
         return
 
     if args.option == 'setup_after_reboot':
-        setup_oracle()
         return
 
     if args.option == 'receiver':
