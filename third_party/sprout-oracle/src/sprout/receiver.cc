@@ -26,7 +26,7 @@ Receiver::Receiver()
     _count_this_tick( 0 ),
     _cached_forecast(),
     _recv_queue(),
-    _ewma_rate_estimate( 1 ),
+    _ewma_rate_estimate( 0 ),
     _collect_time( 0 ),
     _start_time_point( chrono::high_resolution_clock::now() ),
     _collector_manager(500)
@@ -96,7 +96,7 @@ Sprout::DeliveryForecast Receiver::forecast( void )
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
-      _cached_forecast.add_counts(_ewma_rate_estimate * tick_number);
+      _cached_forecast.add_counts( 0 );
       tick_number++;
 
     }
