@@ -10,6 +10,8 @@
 #include "file_reader.hh"
 #include <list>
 
+#include <chrono>
+
 using namespace std;
 using namespace Network;
 
@@ -20,7 +22,10 @@ int main( int argc, char *argv[] )
 
   Network::SproutConnection *net;
 
+  std::chrono::high_resolution_clock::time_point _start_time_point( chrono::high_resolution_clock::now() );
+
   bool server = true;
+  bool start = true;
 
   if ( argc > 2 ) {
     /* client */
@@ -65,30 +70,35 @@ int main( int argc, char *argv[] )
     }
   }
 
-  fallback_interval = 50;
-  int new_rate_interval = 250;
+  /* We are using a minimum RTT of 60ms
+   *
+   * We will assume that we are given best throughput to use
+   * for each RTT every RTT
+   *
+   * However, we will space things out every 10ms (or 20ms)
+   *   -> No, I do not think that is a good idea.
+   */
+  //fallback_interval = 60;
+  int new_rate_interval = 60;
 
   uint64_t time_of_next_transmission = timestamp() + fallback_interval;
   uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
 
   fprintf( stderr, "Looping...\n" );
 
-//  uint64_t test = 5000 + timestamp();
-
   std::list<uint64_t> oracle;
+  std::list<double> elapsed_time;
 
-  oracle = read_file("oracle50.txt");
+  oracle = read_file_int("oracle.txt");
+  elapsed_time = read_file_double("elapsed_time.txt");
+
   auto it = oracle.begin();// + 61; /* +61 offset to start at 3s*/
 
-  if (it == oracle.end()) {fprintf(stderr, "MUHAHAHHAHHAHAHAHA");}
+  fallback_interval = *it;
+  it++;
 
-//  for (int i = 0; i < 1; i++) {
-//  it++;
-// }
-
-
+  /* Make sure it is initialized so we do not miss first iteration */
   int bytes;
-  //fprintf(stderr, "To Send: %d \n", bytes);
 
   /* loop */
   while ( 1 ) {
@@ -99,36 +109,116 @@ int main( int argc, char *argv[] )
     }
 
     //fprintf(stderr, "To Send: %d \n", bytes);
+/*
+    if (time_of_rate_adjustment <= timestamp())
+    {
 
-//    if (test <= timestamp()) {bytes_to_send = 750;}
+      if (it != oracle.end())
+      {
 
+        it++;
+        bytes = *it;
+
+      }
+      else
+      {
+
+        bytes = 0;
+
+      }
+
+       time_of_rate_adjustment = std::max( timestamp() + new_rate_interval,
+                                            time_of_rate_adjustment );
+
+    }
+*/
 
     /* actually send, maybe */
     if ( /*( bytes_to_send > 0 ) &&*/ ( time_of_next_transmission <= timestamp() ) ) {
 
+
+      if (start)
+      {
+
+        double cur = CollectorManager::getCurrentTime(_start_time_point) / 1000;
+	fprintf(stderr, "Sender Start Time: %f \n", cur);
+        int index = 0;
+
+        cur = 3.076;
+
+        for (auto time_iter = elapsed_time.begin(); time_iter != elapsed_time.end(); time_iter++)
+        {
+           index++;
+
+           double time_value = *time_iter;
+
+           if (time_value >= cur)
+           {
+
+             it++;
+             break;
+
+           }
+           else
+           {
+
+             it++;
+
+           }
+
+        }
+
+        /* As we want to look one step ahead*/
+        it++;
+        int track = *it;
+        fprintf(stderr, "Now: %d \n", track);
+
+        start = false;
+
+      }
+
       bytes = *it;
 
-      bytes_to_send = std::max(bytes - 50, 0);
+      //if ( server ) {
+      //  bytes = 0;
+      //}
 
-      fprintf(stderr, "To Send: %d \n", bytes);
+      bytes_to_send = std::max(bytes - 20, 0);
+
+      //fprintf(stderr, "To Send: %d \n", bytes);
+
       /* How much to send in this tick */
-      //bytes_to_send = (bytes / new_rate_interval) * fallback_interval;
+     // bytes_to_send = (bytes / new_rate_interval) * fallback_interval;
+      //bytes_to_send = std::max(bytes_to_send - 20, 0);
 
+
+      
       if (it != oracle.end())
       {
-        //int v = 1;
+
         it++;
+
       }
       else
       {
-        fprintf(stderr, "Iterator Ended \n");
+
+        bytes = 0;
+
       }
+      
+
+//      if (bytes_to_send == 0) {fprintf(stderr, "Zero \n");}
+
+     if ( bytes_to_send != 0)
+      {
 
       do {
 	int this_packet_size = std::min( 1400, bytes_to_send );
 	bytes_to_send -= this_packet_size;
 	assert( bytes_to_send >= 0 );
 
+	/* This generates the data of required size since 'x' is 1 byte */
+	/* IMPORTANT: IF NOT DATA THEN SIZE WILL JUST BE SIZE OF FORECASTPACKET - 64 bytes */
 	string garbage( this_packet_size, 'x' );
 
 	int time_to_next = 0;
@@ -138,6 +228,8 @@ int main( int argc, char *argv[] )
 
 	net->send( garbage, time_to_next );
       } while ( bytes_to_send > 0 );
+
+     }
 
       time_of_next_transmission = std::max( timestamp() + fallback_interval,
 					    time_of_next_transmission );
