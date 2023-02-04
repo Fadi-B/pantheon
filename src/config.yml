@@ -67,10 +67,6 @@ schemes:
     name: FillP-Sheep
     color: violet
     marker: 'D'
-  oracle:
-    name: BBR Oracle
-    color: purple
-    marker: '+'
   sprout-ewma:
     name: Sprout-EWMA
     color: magenta
