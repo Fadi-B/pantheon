@@ -132,8 +132,17 @@ class TunnelGraph(object):
                 if flow_id not in self.delays:
                     self.delays[flow_id] = []
                     self.delays_t[flow_id] = []
+
+#		data_size = float(items[2])
+
+#                if (data_size > 101):
+
                 self.delays[flow_id].append(delay)
                 self.delays_t[flow_id].append((ts - first_ts) / 1000.0)
+
+#                else:
+
+#                 print(data_size)
 
         tunlog.close()
 
