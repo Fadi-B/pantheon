@@ -6,7 +6,7 @@
 
 using namespace std;
 
-std::list<uint64_t> read_file(string filename)
+std::list<uint64_t> read_file_int(string filename)
 {
 
   std::list< uint64_t > data;
@@ -50,3 +50,46 @@ std::list<uint64_t> read_file(string filename)
 
 }
 
+std::list<double> read_file_double(string filename)
+{
+
+  std::list< double > data;
+
+  string line;
+  double value;
+  ifstream file (filename);
+
+  if(file.is_open())
+  {
+
+     while(!file.eof())
+     {
+
+        getline(file, line);
+
+        try
+        {
+
+          value = stod(line);
+
+        }
+        catch (std::invalid_argument const& ex)
+        {
+
+        }
+
+        //cout << line << endl;
+
+        //fprintf(stderr, " \n");
+
+        data.push_back( (double) value );
+
+     }
+
+        file.close();
+
+  }
+
+  return data;
+
+}
