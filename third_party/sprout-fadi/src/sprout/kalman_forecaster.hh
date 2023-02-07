@@ -18,7 +18,7 @@ public:
     //using KF::Matrix;
 
     static const uint8_t bits = 8;
-    static const uint16_t ms_per_sec = 500; /* We should be careful with this one as we are forecasting 20ms into the future*/
+    static const uint16_t ms_per_sec = 60; /* We should be careful with this one as we are forecasting 20ms into the future*/
     static const uint8_t iModel = 1;
 
 
@@ -42,6 +42,18 @@ public:
 
     }
 
+    void showdata (double *data,  int n) {
+  	int i; 
+
+	if (1) {
+    	fprintf (stderr, "Bytes to be drained");
+    	for (i=0; i<n; i++ ){
+    	 fprintf (stderr, " %f", data[i]);
+    	}
+   	 fprintf(stderr, "\n");
+  	}
+    }
+
     void forecast(uint8_t tick_number)
     {
 
@@ -52,7 +64,7 @@ public:
 
             state.predict(Q);
 
-            if (size == 0)
+            if (i == 0)
             {
 
                 bytes_to_be_drained[i] = getForecastedBytes();
@@ -68,6 +80,9 @@ public:
             }
 
         }
+
+      //clearForecast();
+      showdata(bytes_to_be_drained, 8);
 
     }
 
@@ -148,12 +163,10 @@ private:
 
         double COLUMN = 0; /* Vector will just have 1 column */
 
-        uint8_t SIZE = 4;
-
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
-        double params[SIZE] = {1.9736, 0.27786, -0.019446, -0.13415163};
+        double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150};
 
-        for (int i = 0; i < SIZE; i++)
+        for (int i = 0; i < KF::DIM; i++)
         {
 
             forecastModel(i, COLUMN) = params[i];
@@ -166,7 +179,7 @@ private:
     {
 
         /* For now will assume everything else has noise 0 */
-        Q(KF::iBand, KF::iBand) = 0.1;
+        Q(KF::iBand, KF::iBand) = 0.01;
 
         /* Note: Should check that the other entries are 0 by default */
 
@@ -177,11 +190,7 @@ private:
 
         //R(KF::iBand, KF::iBand) = 2;
 
-        R << 0.044, -0.033, 0.243, -0.025, 0.0109, 
-        0.158, 1.909, -0.059, 0.0187, -0.0329,
-        -0.1192, -0.0204, -0.0358, 0.06034, -0.1664,
-        -0.0700, 0.1151, 0.1857, -0.1511, 0.0644,
-        -0.098, -0.0856, -0.0871, -0.0422, 0.0996;
+        R(KF::iBand, KF::iBand) = 0.35873197;
 
 
     }

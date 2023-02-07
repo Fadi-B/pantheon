@@ -34,7 +34,7 @@ Receiver::Receiver()
     _MIN_RTT( 1000000 ), /* Initialize to high value */
     _prev_arrival( -1 ),
     _collector_manager(TICK_LENGTH),
-    _KFforecaster(36, 0, 0, 0)
+    _KFforecaster(1.6, 0, 0, 0)
 {
 
   double cur = CollectorManager::getCurrentTime(_start_time_point);
@@ -81,8 +81,8 @@ void Receiver::advance_to( const uint64_t time )
 
       _KFforecaster.correctForecast(measurement.transpose());
 
-      //const double alpha = 1.0;
-      //_ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
+      const double alpha = 1.0;
+      _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
 
       _count_this_tick = 0;
 
@@ -154,7 +154,7 @@ Sprout::DeliveryForecast Receiver::forecast( void )
 
     _KFforecaster.clearForecast();
 
-    _KFforecaster.forecast(15);
+    _KFforecaster.forecast(NUM_TICKS);
 
     int tick_number = 1;
 
@@ -163,6 +163,7 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     //fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
 
     fprintf(stderr, "Start\n");
+    fprintf(stderr, "Count: %f \n", _ewma_rate_estimate);
     int tick = 0;
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
@@ -171,11 +172,12 @@ Sprout::DeliveryForecast Receiver::forecast( void )
       //if (iter == _KFforecaster.getBytesToBeDrained().end()) {fprintf(stderr, "Mugi \n");}
       double expected_drainage = fadi[tick];
       //fprintf(stderr, "Tick: %d \n", tick);
-      fprintf(stderr, "Drain: %f \n", expected_drainage);
+      //fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
-      _cached_forecast.add_counts( 5/*expected_drainage*/ );
+      _cached_forecast.add_counts( _ewma_rate_estimate * tick_number/*expected_drainage*/ );
 
       tick++;
+      tick_number++;
 
     }
 

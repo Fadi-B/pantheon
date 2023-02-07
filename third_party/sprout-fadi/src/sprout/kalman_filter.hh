@@ -66,10 +66,10 @@ public:
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
-	    new_mean[iBias] = 1; // Bias
+	    //new_mean[iBias] = 1; // Bias
 
-
-	    /* Max function does not seem to work so will be doing it manually */
+        /*
+	    // Max function does not seem to work so will be doing it manually
 	    double throughput = measurement[iBand];
 
 	    if (throughput < 0)
@@ -84,7 +84,7 @@ public:
 	    new_mean[iRTTG] = measurement[iRTTG]; // RTT Gradient
 	    new_mean[iQueueDelay] = measurement[iQueueDelay]; // Queuing Delay
 	    new_mean[iInterArrival] = measurement[iInterArrival]; // Inter arrival time
-
+        */
         _cov = new_cov;
         _mean = new_mean;
 
