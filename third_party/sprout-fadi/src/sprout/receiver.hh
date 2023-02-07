@@ -25,7 +25,7 @@ private:
   static constexpr double BROWNIAN_MOTION_RATE = 200;
   static constexpr double OUTAGE_ESCAPE_RATE = 1;
   static const int NUM_BINS = 256;
-  static const int TICK_LENGTH = 20;
+  static const int TICK_LENGTH = 60;
   static const int MAX_ARRIVALS_PER_TICK = 30;
   static const int NUM_TICKS = 8;
 
@@ -86,7 +86,7 @@ public:
   Receiver();
   void warp_to( const uint64_t time ) { _score_time = _time = time; }
   void advance_to( const uint64_t time );
-  void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception );
+  void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception, bool server );
 
   Sprout::DeliveryForecast forecast( void );
 

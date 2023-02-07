@@ -33,7 +33,7 @@ Receiver::Receiver()
     _start_time_point( chrono::high_resolution_clock::now() ),
     _MIN_RTT( 1000000 ), /* Initialize to high value */
     _prev_arrival( -1 ),
-    _collector_manager(500),
+    _collector_manager(TICK_LENGTH),
     _KFforecaster(36, 0, 0, 0)
 {
 
@@ -96,37 +96,46 @@ void Receiver::advance_to( const uint64_t time )
 
 }
 
-void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception )
+void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception, bool server )
 {
   _count_this_tick += len / 1400.0;
   _recv_queue.recv( seq, throwaway_window, len );
   _score_time = std::max( _time + time_to_next, _score_time );
 
-  uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
-  uint16_t inter_arrival_time = Network::timestamp_diff(timestamp_reception, _prev_arrival);
-  /* Check if starting value since we need at least two points */
-  if (_prev_arrival == -1)
+  if ( server )
   {
 
-    _prev_arrival = timestamp_reception;
+  	uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
+  	uint16_t inter_arrival_time = Network::timestamp_diff(timestamp_reception, _prev_arrival);
+ 	 /* Check if starting value since we need at least two points */
+  	if (_prev_arrival == -1)
+  	{
 
-    /* To indicate that we have not obtained two samples yet */
-    inter_arrival_time = -1;
+    	_prev_arrival = timestamp_reception;
+
+    	/* To indicate that we have not obtained two samples yet */
+    	inter_arrival_time = -1;
+
+  	}
+
+  	/* Ensure we update the previous estimate of packet arrival */
+  	_prev_arrival = timestamp_reception;
+
+  	/* Updates the minimum RTT observed during recent connection */
+  	if (RTT < _MIN_RTT)
+  	{
+
+    	_MIN_RTT = RTT;
+
+  	}
+
+	_collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
+	//fprintf(stderr, "SERVER \n");
 
   }
 
-  /* Ensure we update the previous estimate of packet arrival */
-  _prev_arrival = timestamp_reception;
+  //  _collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
 
-  /* Updates the minimum RTT observed during recent connection */
-  if (RTT < _MIN_RTT)
-  {
-
-    _MIN_RTT = RTT;
-
-  }
-
-  _collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
 
 }
 

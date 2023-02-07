@@ -79,7 +79,7 @@ public:
 
     void saveData(std::list<double> &data)
     {
-        fprintf(stderr, "data: %f \n", *(data.rbegin()));
+        //fprintf(stderr, "data: %f \n", *(data.rbegin()));
         writer.write_to_file("throughput_data.csv", data);
 
     }
