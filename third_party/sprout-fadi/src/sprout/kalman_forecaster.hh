@@ -17,7 +17,7 @@ public:
     //using KF::DIM;
     //using KF::Matrix;
 
-    static const uint8_t bits = 8;
+    static const uint16_t bits = 1500 * 8;
     static const uint16_t ms_per_sec = 60; /* We should be careful with this one as we are forecasting 20ms into the future*/
     static const uint8_t iModel = 1;
 

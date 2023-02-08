@@ -71,16 +71,16 @@ namespace Network {
     Direction direction;
     uint16_t timestamp, timestamp_reply, throwaway_window, time_to_next;
     string payload;
-    
+
     Packet( uint64_t s_seq, Direction s_direction,
 	    uint16_t s_timestamp, uint16_t s_timestamp_reply, uint16_t s_throwaway_window, uint16_t s_time_to_next, const string & s_payload )
       : seq( s_seq ), direction( s_direction ),
       timestamp( s_timestamp ), timestamp_reply( s_timestamp_reply ), throwaway_window( s_throwaway_window ), time_to_next( s_time_to_next ),
 	payload( s_payload )
     {}
-    
+
     Packet( string coded_packet, Session *session );
-    
+
     string tostring( Session *session );
   };
 
@@ -182,7 +182,7 @@ namespace Network {
 
     void set_last_roundtrip_success( uint64_t s_success ) { last_roundtrip_success = s_success; }
 
-    Sprout::DeliveryForecast forecast( void ) { forecastr.advance_to( timestamp() ); return forecastr.forecast(); }
+    Sprout::DeliveryForecast forecast( void ) { forecastr.advance_to( timestamp(), server ); return forecastr.forecast(); }
 
     uint64_t get_next_seq( void ) const { return next_seq; }
     int get_tick_length( void ) const { return forecastr.get_tick_length(); }

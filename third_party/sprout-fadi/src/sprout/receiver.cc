@@ -53,15 +53,22 @@ Receiver::Receiver()
 }
 
 
-void Receiver::advance_to( const uint64_t time )
+void Receiver::advance_to( const uint64_t time, bool server )
 {
   assert( time >= _time );
 
   while ( _time + TICK_LENGTH < time ) {
 
-    _KFforecaster.forecast(1); //Works
+    if ( server )
+    {
+      _KFforecaster.forecast(1); //Works
+    }
+    
 
     if ( (_time >= _score_time) || (_count_this_tick > 0) ) {
+
+      if ( server )
+      {
 
        /* Currently 1 x 5 */ //Works
       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory();
@@ -85,6 +92,8 @@ void Receiver::advance_to( const uint64_t time )
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
 
       _count_this_tick = 0;
+
+      }
 
     } else {
       //      fprintf( stderr, "-SKIP-" );

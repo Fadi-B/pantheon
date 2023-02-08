@@ -426,7 +426,7 @@ string Connection::recv( void )
     forecastr_initialized = true;
   }
 
-  forecastr.advance_to( timestamp() );
+  forecastr.advance_to( timestamp(), server );
   forecastr.recv( p.seq, p.throwaway_window, p.time_to_next, p.payload.size(), p.timestamp, timestamp(), server );
 
   if ( p.seq >= expected_receiver_seq ) { /* don't use out-of-order packets for timestamp or targeting */

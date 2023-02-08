@@ -85,7 +85,7 @@ public:
 
   Receiver();
   void warp_to( const uint64_t time ) { _score_time = _time = time; }
-  void advance_to( const uint64_t time );
+  void advance_to( const uint64_t time, bool server );
   void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception, bool server );
 
   Sprout::DeliveryForecast forecast( void );

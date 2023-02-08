@@ -62,6 +62,7 @@ public:
 
         double total_bits = helper_data * bits;
 
+        /* in Mbits/s */
         double bits_per_sec = total_bits / (TICK_TIME*1000);
 
         data.push_back(bits_per_sec);
