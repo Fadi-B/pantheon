@@ -64,8 +64,12 @@ public:
 
             state.predict(Q);
 
+            //fprintf(stderr, "Forecast Prediction: %f \n", state.mean()(KF::iBand));
+
             if (i == 0)
             {
+
+                //fprintf(stderr, "Forecast Prediction: %f \n", state.mean()(KF::iBand));
 
                 bytes_to_be_drained[i] = getForecastedBytes();
 
@@ -82,7 +86,7 @@ public:
         }
 
       //clearForecast();
-      showdata(bytes_to_be_drained, 8);
+      //showdata(bytes_to_be_drained, 8);
 
     }
 
@@ -92,6 +96,9 @@ public:
         /* Ensure we convert the packets seen into Mbits/s as we are working with that */
         //double packets_received = observed(KF::iBand, 1);
         //observed(KF::iBand, 1) = PacketCollector::to_bits_per_sec(packets_received);
+
+        fprintf(stderr, "Correct Obs: %f \n", observed(KF::iBand, 0));
+        fprintf(stderr, "Current Mean: %f \n", state.mean()(KF::iBand));
 
         state.update(observed, R);
 
@@ -179,7 +186,7 @@ private:
     {
 
         /* For now will assume everything else has noise 0 */
-        Q(KF::iBand, KF::iBand) = 0.01;
+        Q(KF::iBand, KF::iBand) = 0.21;
 
         /* Note: Should check that the other entries are 0 by default */
 
@@ -190,7 +197,7 @@ private:
 
         //R(KF::iBand, KF::iBand) = 2;
 
-        R(KF::iBand, KF::iBand) = 0.35873197;
+        R(KF::iBand, KF::iBand) = 0.01;//0.35873197;
 
 
     }

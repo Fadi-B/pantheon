@@ -88,7 +88,7 @@ public:
   void advance_to( const uint64_t time, bool server );
   void recv( const uint64_t seq, const uint16_t throwaway_window, const uint16_t time_to_next, const size_t len, uint16_t timestamp, uint16_t timestamp_reception, bool server );
 
-  Sprout::DeliveryForecast forecast( void );
+  Sprout::DeliveryForecast forecast( bool server );
 
   int get_tick_length( void ) const { return TICK_LENGTH; }
 };

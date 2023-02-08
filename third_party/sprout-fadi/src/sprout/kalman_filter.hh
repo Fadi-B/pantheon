@@ -45,9 +45,9 @@ public:
 
 	    /* Checking correct dimensions */
 	    //assert(  );
-
+        //fprintf(stderr, "Pre Pred: %f \n", _mean(iBand, 0));
         const Vector new_mean = F * _mean;
-
+        //new_mean(iBand, 0) = 1;
         const Matrix newP = F * _cov * F.transpose() + Q;
 
         _cov = newP;
@@ -59,6 +59,8 @@ public:
     void update(Vector measurement, Matrix measurementVar)
     {
 
+        //fprintf(stderr, "Pre Update: %f \n", _mean(iBand, 0));
+
         const Vector y = innovation(measurement);
 
         const Matrix K = kalman_gain(measurementVar);
@@ -66,6 +68,8 @@ public:
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
+        //fprintf(stderr, "Post Update: %f \n", _mean(iBand, 0));
+        
 	    //new_mean[iBias] = 1; // Bias
 
         /*

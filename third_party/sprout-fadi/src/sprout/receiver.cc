@@ -148,7 +148,7 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
 
 }
 
-Sprout::DeliveryForecast Receiver::forecast( void )
+Sprout::DeliveryForecast Receiver::forecast( bool server )
 {
   if ( _cached_forecast.time() == _time ) {
     return _cached_forecast;
@@ -183,14 +183,24 @@ Sprout::DeliveryForecast Receiver::forecast( void )
       //fprintf(stderr, "Tick: %d \n", tick);
       //fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
-      _cached_forecast.add_counts( _ewma_rate_estimate * tick_number/*expected_drainage*/ );
+      if ( server )
+      {
+      fprintf(stderr, "Drain: %f \n", expected_drainage);
+      _cached_forecast.add_counts( _ewma_rate_estimate * tick_number/*std::max(0, expected_drainage*/ );
 
+      }
+      else
+      {
+
+      _cached_forecast.add_counts( 0/*std::max(0, expected_drainage*/ );
+
+      }
       tick++;
       tick_number++;
 
     }
 
-    fprintf(stderr, "END \n");
+    fprintf(stderr, "END - Clearing Forecast \n");
 
     /* Ensure we clear our previous forecast - Will be irrelevant for the future */
     _KFforecaster.clearForecast();
