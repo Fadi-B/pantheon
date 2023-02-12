@@ -5,7 +5,7 @@ import sys
 import os
 
 ### Pantheon start up delay measured experimentally - Might vary between experiments slightly ###
-PANTH_DELAY_FACTOR = 3.128
+PANTH_DELAY_FACTOR = 3.128 #3.128 #Seems to be this on average - cannot do better estimation than this tbh
 
 def create_oracle_data(trace, granularity, delay_factor, oracle_filename):
     
@@ -15,18 +15,18 @@ def create_oracle_data(trace, granularity, delay_factor, oracle_filename):
     # as pantheon starts a bit later
     ignore_index = -1
     
-#    for i in range(0, len(time)):
+    for i in range(0, len(time)):
         
         # Should be careful here since if it is larger than 3.06
         # (e.g when using non-divisible granularity like 7ms) then might want
         # to include that instead of throwing it away as the pantheon delay itself is 3.06
         
-#        if (time[i] >= PANTH_DELAY_FACTOR):
+        if (time[i] >= PANTH_DELAY_FACTOR):
             
-#            ignore_index = i
+            ignore_index = i
 
             # Break to ensure we do not loop alter true value of ignore_index  
-#            break
+            break
     
     rate_oracle = rate[ignore_index + 1:]
     rate_oracle = np.concatenate(([granularity], rate_oracle)) #Add granularity at head of list

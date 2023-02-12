@@ -81,21 +81,24 @@ int main( int argc, char *argv[] )
   //fallback_interval = 60;
   int new_rate_interval = 60;
 
-  uint64_t time_of_next_transmission = timestamp() + fallback_interval;
-  uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
+  //uint64_t time_of_next_transmission = timestamp() + fallback_interval;
+  //uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
 
   fprintf( stderr, "Looping...\n" );
 
   std::list<uint64_t> oracle;
-  std::list<double> elapsed_time;
 
   oracle = read_file_int("oracle.txt");
-  elapsed_time = read_file_double("elapsed_time.txt");
 
   auto it = oracle.begin();// + 61; /* +61 offset to start at 3s*/
 
   fallback_interval = *it;
   it++;
+
+  uint64_t time_of_next_transmission = timestamp() + fallback_interval; //We want to send instantly
+  uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
+
+  fprintf(stderr, "Fallback Interval: %d \n", fallback_interval);
 
   /* Make sure it is initialized so we do not miss first iteration */
   int bytes;
@@ -136,52 +139,16 @@ int main( int argc, char *argv[] )
     /* actually send, maybe */
     if ( /*( bytes_to_send > 0 ) &&*/ ( time_of_next_transmission <= timestamp() ) ) {
 
-
       if (start)
       {
 
         double cur = CollectorManager::getCurrentTime(_start_time_point) / 1000;
 	fprintf(stderr, "Sender Start Time: %f \n", cur);
-        int index = 0;
-
-        cur = 3.076;
-
-        for (auto time_iter = elapsed_time.begin(); time_iter != elapsed_time.end(); time_iter++)
-        {
-           index++;
-
-           double time_value = *time_iter;
-
-           if (time_value >= cur)
-           {
-
-             it++;
-             break;
-
-           }
-           else
-           {
-
-             it++;
-
-           }
-
-        }
-
-        /* As we want to look one step ahead*/
-        it++;
-        int track = *it;
-        fprintf(stderr, "Now: %d \n", track);
-
         start = false;
 
       }
 
       bytes = *it;
-
-      //if ( server ) {
-      //  bytes = 0;
-      //}
 
       bytes_to_send = std::max(bytes - 20, 0);
 
