@@ -85,7 +85,7 @@ void Receiver::advance_to( const uint64_t time, bool server )
         measurement(0, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
 
       }
-
+	//fprintf(stderr, "Meas. Recv: %f \n", (60*1000*measurement(0, KF::iBand))/(1500*8));
       _KFforecaster.correctForecast(measurement.transpose());
 
       const double alpha = 1.0;
@@ -181,12 +181,12 @@ Sprout::DeliveryForecast Receiver::forecast( bool server )
       //if (iter == _KFforecaster.getBytesToBeDrained().end()) {fprintf(stderr, "Mugi \n");}
       double expected_drainage = fadi[tick];
       //fprintf(stderr, "Tick: %d \n", tick);
-      //fprintf(stderr, "Drain: %f \n", expected_drainage);
+      fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
       if ( server )
       {
-      fprintf(stderr, "Drain: %f \n", expected_drainage);
-      _cached_forecast.add_counts( _ewma_rate_estimate * tick_number/*std::max(0, expected_drainage*/ );
+      //fprintf(stderr, "Drain: %f \n", expected_drainage);
+      _cached_forecast.add_counts( /*_ewma_rate_estimate * tick_number*/ expected_drainage);
 
       }
       else

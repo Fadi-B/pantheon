@@ -30,7 +30,7 @@ public:
         initForecastModel();
 
         KF::Matrix F = KF::Matrix::Identity(KF::DIM, KF::DIM);
-        F.row(iModel) = forecastModel.transpose(); //Slightly unsure if this would work soshould confirm
+        F.row(iModel) = forecastModel.transpose(); //Slightly unsure if this would work so should confirm
 
         /* Note: Uncertainty Matrix is initialized to identity in KF class - No need to set it */
 
@@ -97,9 +97,11 @@ public:
         //double packets_received = observed(KF::iBand, 1);
         //observed(KF::iBand, 1) = PacketCollector::to_bits_per_sec(packets_received);
 
-        fprintf(stderr, "Correct Obs: %f \n", observed(KF::iBand, 0));
-        fprintf(stderr, "Current Mean: %f \n", state.mean()(KF::iBand));
+        double b = ((ms_per_sec * 1000) * observed(KF::iBand, 0))/bits;
 
+//        fprintf(stderr, "Correct Obs: %f \n", b/*observed(KF::iBand, 0)*/);
+//        fprintf(stderr, "Current Mean: %f \n", state.mean()(KF::iBand));
+	fprintf(stderr, "Correcting \n");
         state.update(observed, R);
 
     }
@@ -107,8 +109,13 @@ public:
     double getForecastedBytes()
     {
 
+	double uncertainty = state.cov()(KF::iBand, KF::iBand);
+	double stddev = std::sqrt(uncertainty);
+
+	fprintf(stderr, "Stddev: %f \n", stddev);
+
         /* Stored in Mbits/s */
-        double rate = state.mean()(KF::iBand);
+        double rate = state.mean()(KF::iBand); //- 2*stddev;
 
         double bytes = ((ms_per_sec * 1000) * rate) / bits;
 
@@ -171,7 +178,9 @@ private:
         double COLUMN = 0; /* Vector will just have 1 column */
 
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
-        double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150};
+        //double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150}; //TMobile UMTS
+
+	double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
 
         for (int i = 0; i < KF::DIM; i++)
         {
@@ -185,6 +194,8 @@ private:
     void initQ()
     {
 
+	Q.setZero();
+
         /* For now will assume everything else has noise 0 */
         Q(KF::iBand, KF::iBand) = 0.21;
 
@@ -195,9 +206,11 @@ private:
     void initR()
     {
 
+	R.setZero();
+
         //R(KF::iBand, KF::iBand) = 2;
 
-        R(KF::iBand, KF::iBand) = 0.01;//0.35873197;
+        R(KF::iBand, KF::iBand) = 0.35873197;
 
 
     }

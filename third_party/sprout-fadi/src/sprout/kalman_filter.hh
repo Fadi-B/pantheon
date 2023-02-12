@@ -59,38 +59,47 @@ public:
     void update(Vector measurement, Matrix measurementVar)
     {
 
+	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+
+	//fprintf(stderr, "Meas Update: %f \n", measurement(iBand, 0));
         //fprintf(stderr, "Pre Update: %f \n", _mean(iBand, 0));
+
+	//std::cerr << "\n Pre Update \n" << _mean.format(CleanFmt);
 
         const Vector y = innovation(measurement);
 
+	//fprintf(stderr, "Innovation: %f \n", y(iBand, 0));
+
         const Matrix K = kalman_gain(measurementVar);
+
+	//fprintf(stderr, "Kalman Gain: %f \n", K(iBand, 0));
 
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
+	//std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
+	std::cerr << "\n Cov \n" << new_cov.format(CleanFmt);
+
         //fprintf(stderr, "Post Update: %f \n", _mean(iBand, 0));
-        
-	    //new_mean[iBias] = 1; // Bias
 
-        /*
-	    // Max function does not seem to work so will be doing it manually
-	    double throughput = measurement[iBand];
+	new_mean[iBias] = 1; // Bias
 
-	    if (throughput < 0)
-    	{
-	      new_mean[iBand] = 0;
-	    }
-	    else
-	    {
-	    new_mean[iBand] = throughput;
-	    }
+	// Max function does not seem to work so will be doing it manually
+	double throughput = new_mean[iBand];
 
-	    new_mean[iRTTG] = measurement[iRTTG]; // RTT Gradient
-	    new_mean[iQueueDelay] = measurement[iQueueDelay]; // Queuing Delay
-	    new_mean[iInterArrival] = measurement[iInterArrival]; // Inter arrival time
-        */
+	if (throughput < 0)
+	{
+	  new_mean[iBand] = 0;
+	}
+
+	new_mean[iRTTG] = measurement[iRTTG]; 		  	// RTT Gradient
+	new_mean[iQueueDelay] = measurement[iQueueDelay];	// Queuing Delay
+	new_mean[iInterArrival] = measurement[iInterArrival];   // Inter arrival time
+
         _cov = new_cov;
         _mean = new_mean;
+
+	//std::cerr << "\n New Mean \n" << _mean.format(CleanFmt);
 
         return;
 
@@ -99,6 +108,13 @@ public:
     Vector innovation(Vector measurement)
     {
         Vector innov = measurement - H * _mean;
+
+	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+        //std::string sep = "\n----------------------------------------\n";
+
+        //std::cerr << "\n Innov \n" << innov.format(CleanFmt);
+        //std::cerr << "\n Meas. \n" << measurement.format(CleanFmt);
+	//std::cerr << "\n Mean \n" << _mean.format(CleanFmt);
 
         return innov;
     }
@@ -115,9 +131,34 @@ public:
         Matrix S = innovation_cov(R);
 
         //printf("SIZE: %d\n", (_cov * H.transpose()).size());
-        Matrix K = _cov * H.transpose() * S.inverse();
 
-        return K;
+	/* We will compute the kalman gain without explicitly
+	 * inverting the S matrix as this can produce issues if S is not fully invertible
+	 * due to numerical precision etc.
+	 *
+	 * Will solve for x in S.T*x = H*P.T as this will give K.T
+	 *
+	 * From which K can be easily obtained by transposing the result
+	 *
+	 */
+	Matrix A = S.transpose();
+
+	//Eigen::HouseholderQR<Matrix> qr(A);
+	Matrix x = A.colPivHouseholderQr().solve(H*(_cov.transpose())); // computes A^-1 * b
+	Matrix K_solv = x.transpose();
+
+        //Matrix K = _cov * H.transpose() * S.inverse();
+
+	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+        //std::string sep = "\n----------------------------------------\n";
+
+        //std::cerr << "\n S \n" << S.format(CleanFmt);
+	//std::cerr << "\n S Inv \n" << S.inverse().format(CleanFmt);
+        //std::cerr << "\n Cov. \n" << _cov.format(CleanFmt);
+        //std::cerr << "\n K \n" << K.format(CleanFmt);
+	//std::cerr << "\n K Solv \n" << K_solv.format(CleanFmt);
+
+        return K_solv;
     }
 
     void setF(Matrix newF)

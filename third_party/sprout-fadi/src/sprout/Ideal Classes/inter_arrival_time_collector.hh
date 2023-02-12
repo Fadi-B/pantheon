@@ -50,10 +50,10 @@ public:
 
         auto iter = helper_data.begin();
 
-        uint16_t limit = helper_data.size() - 1; 
+        uint16_t size = helper_data.size(); 
 
         /* Looping until next to last to ensure we do not go out of bounds */
-        for (auto i = 0; i <= limit; i++)
+        for (auto i = 0; i < size; i++)
         {
 
             double timestamp_1 = *iter;
@@ -68,7 +68,15 @@ public:
 
         }
 
-        double inter_arrival_time = sum_of_inter_arrival_times / limit;
+        /* Use 0 as default value when not enough data available */
+        double inter_arrival_time = 0;
+
+        if (size > 1)
+        {
+            /* Divide by size - 1 as we are considering pairs of data */
+            inter_arrival_time = sum_of_inter_arrival_times / (size - 1);
+
+        }
 
         double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time); 
 
