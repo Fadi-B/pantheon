@@ -65,9 +65,19 @@ public:
 
         }
 
-        /* RTT for this tick will be considered as the average */
-        double RTT = sum / ( helper_data.size() );
+        /* Assign it min RTT by default */
+        double RTT = MIN_RTT;
 
+        uint16_t size = helper_data.size();
+
+        if ( size > 0)
+        {
+            /* RTT for this tick will be considered as the average */
+            RTT = sum / size;
+
+        }
+
+        /* Be careful here since technically the only reason it works is because EWMA WEIGHT is 1*/
         double queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * RTT - MIN_RTT); 
 
         data.push_back(queuing_delay);

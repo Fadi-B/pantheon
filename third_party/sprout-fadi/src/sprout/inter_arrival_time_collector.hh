@@ -65,7 +65,17 @@ public:
 
         }
 
-        double inter_arrival_time = sum_of_inter_arrival_times / helper_data.size();
+        /* Assign it 0 by default */
+        double inter_arrival_time = 0;
+
+        uint16_t size = helper_data.size();
+
+        if ( size > 0)
+        {
+
+            inter_arrival_time = sum_of_inter_arrival_times / size;
+
+        }
 
         double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time); 
 
