@@ -26,6 +26,9 @@ public:
         /* Dummy initialization - Update function will do the true updating */
         MIN_RTT = 0;
 
+        /* Assume no delay at the start of connection - reasonable assumption to make */
+        queuing_delay = 0;
+
     }
 
     Type getType() const override
@@ -77,7 +80,7 @@ public:
 
         }
 
-        double queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * RTT - MIN_RTT); 
+        queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) ); 
 
         data.push_back(queuing_delay);
 
@@ -117,6 +120,8 @@ private:
     std::list< double > helper_data;
 
     double MIN_RTT;
+
+    double queuing_delay;
 
 };
 

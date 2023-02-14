@@ -26,9 +26,10 @@ public:
 
         double total_bits = packets * bits;
 
-        double bits_per_sec = total_bits / (tick_time*1000);
+        /* Dealing with Mbits/s throughout */
+        double Mbits_per_sec = total_bits / (tick_time*1000);
 
-        return bits_per_sec;
+        return Mbits_per_sec;
 
     }
 
@@ -58,16 +59,11 @@ public:
 
         //fprintf(stderr, "Helper2: %f \n", helper_data);
 
-        int bits = MSS * BYTE_SIZE;
+        double Mbits_per_sec = to_bits_per_sec(helper_data, TICK_TIME);
 
-        double total_bits = helper_data * bits;
+        data.push_back(Mbits_per_sec);
 
-        /* in Mbits/s */
-        double bits_per_sec = total_bits / (TICK_TIME*1000);
-
-        data.push_back(bits_per_sec);
-
-	return bits_per_sec;
+	    return Mbits_per_sec;
 
     }
 
@@ -83,7 +79,7 @@ public:
         helper_data = 0;
         data.clear();
 
-	data.push_back(TICK_TIME);
+	    data.push_back(TICK_TIME);
     }
 
     double getHelperData() 

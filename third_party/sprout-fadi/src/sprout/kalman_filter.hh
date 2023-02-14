@@ -4,7 +4,7 @@
 #include "assert.h"
 #include <stdio.h>
 
-#include "noise_generator.hh"
+//#include "noise_generator.hh"
 
 class KF
 {
@@ -242,7 +242,7 @@ private:
     Matrix H;
 
 /* Creating the Gaussian Noise generator */
-    NoiseGenerator * gen = new NoiseGenerator(0, 0, 0.01); //seed, mean, std
-    NoiseGenerator::Generator generator = (*gen).get_generator();
+    //NoiseGenerator * gen = new NoiseGenerator(0, 0, 0.01); //seed, mean, std
+    //NoiseGenerator::Generator generator = (*gen).get_generator();
 
 };

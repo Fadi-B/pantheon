@@ -24,6 +24,7 @@ public:
     {
 
 	count = 0;
+    ewma_inter_arrival_time = 0;
 
     }
 
@@ -78,7 +79,7 @@ public:
 
         }
 
-        double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time);
+        ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time);
 
         data.push_back(ewma_inter_arrival_time);
 
@@ -121,6 +122,8 @@ private:
     uint16_t count;
 
     std::list< double > helper_data;
+
+    double ewma_inter_arrival_time;
 
 };
 
