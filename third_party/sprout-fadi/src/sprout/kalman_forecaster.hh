@@ -178,9 +178,9 @@ private:
         double COLUMN = 0; /* Vector will just have 1 column */
 
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
-        //double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150}; //TMobile UMTS
+        double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150}; //TMobile UMTS
 
-	double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
+	//double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
 
         for (int i = 0; i < KF::DIM; i++)
         {

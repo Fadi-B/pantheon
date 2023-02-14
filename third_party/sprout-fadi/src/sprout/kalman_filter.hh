@@ -4,6 +4,8 @@
 #include "assert.h"
 #include <stdio.h>
 
+#include "noise_generator.hh"
+
 class KF
 {
 
@@ -38,6 +40,7 @@ public:
 
         /* Noiseless connection between measurement and state initialization */
         H = Matrix::Identity(DIM, DIM); // For now we assume a unity connection
+
     }
 
     void predict(Matrix Q)
@@ -74,11 +77,13 @@ public:
 
 	//fprintf(stderr, "Kalman Gain: %f \n", K(iBand, 0));
 
+	std::cerr << "\n Pre-Cov \n" << _cov.format(CleanFmt) << "\n";
+
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
-	//std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
-	std::cerr << "\n Cov \n" << new_cov.format(CleanFmt);
+	std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
+	std::cerr << "\n Post-Cov \n" << new_cov.format(CleanFmt) << "\n";
 
         //fprintf(stderr, "Post Update: %f \n", _mean(iBand, 0));
 
@@ -129,7 +134,26 @@ public:
     Matrix kalman_gain(Matrix R)
     {
         Matrix S = innovation_cov(R);
+/*
+	Matrix N;
 
+	for (int i = 0; i < DIM; i++)
+	{
+
+	  for (int j = 0; j < DIM; j++)
+	  {
+
+	    double noise = (*gen).get_noise(generator);
+
+	    N(i, j) = noise;
+
+	  }
+
+	}
+
+	// Add small noise to ensure invertible
+	S = S + N;
+*/
         //printf("SIZE: %d\n", (_cov * H.transpose()).size());
 
 	/* We will compute the kalman gain without explicitly
@@ -143,11 +167,10 @@ public:
 	 */
 	Matrix A = S.transpose();
 
-	//Eigen::HouseholderQR<Matrix> qr(A);
 	Matrix x = A.colPivHouseholderQr().solve(H*(_cov.transpose())); // computes A^-1 * b
 	Matrix K_solv = x.transpose();
 
-        //Matrix K = _cov * H.transpose() * S.inverse();
+        //Matrix K_solv = _cov * H.transpose() * S.inverse();
 
 	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
         //std::string sep = "\n----------------------------------------\n";
@@ -217,5 +240,9 @@ private:
 
     /* Noiseless connection between measurement and state */
     Matrix H;
+
+/* Creating the Gaussian Noise generator */
+    NoiseGenerator * gen = new NoiseGenerator(0, 0, 0.01); //seed, mean, std
+    NoiseGenerator::Generator generator = (*gen).get_generator();
 
 };

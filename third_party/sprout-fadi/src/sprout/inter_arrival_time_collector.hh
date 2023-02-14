@@ -23,6 +23,7 @@ public:
     :Collector(tick_time)
     {
 
+	count = 0;
 
     }
 
@@ -43,7 +44,7 @@ public:
             helper_data.push_back(inter_arrival_time);
 
         }
-        
+
 
         return;
 
@@ -58,7 +59,7 @@ public:
         /* Looping until next to last to ensure we do not go out of bounds */
         for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
-            
+
             auto obj = *it;
 
             sum_of_inter_arrival_times = sum_of_inter_arrival_times + obj;
@@ -70,18 +71,20 @@ public:
 
         uint16_t size = helper_data.size();
 
-        if ( size > 0)
+        if ( size > 0 && count > 1) //count > 1 to avoid large inter_arrival_time measured due to startup connection
         {
 
             inter_arrival_time = sum_of_inter_arrival_times / size;
 
         }
 
-        double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time); 
+        double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time);
 
         data.push_back(ewma_inter_arrival_time);
 
-	    return ewma_inter_arrival_time;
+        count = count + 1;
+
+	return ewma_inter_arrival_time;
 
     }
 
@@ -114,6 +117,8 @@ public:
     }
 
 private:
+
+    uint16_t count;
 
     std::list< double > helper_data;
 

@@ -77,7 +77,6 @@ public:
 
         }
 
-        /* Be careful here since technically the only reason it works is because EWMA WEIGHT is 1*/
         double queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * RTT - MIN_RTT); 
 
         data.push_back(queuing_delay);
