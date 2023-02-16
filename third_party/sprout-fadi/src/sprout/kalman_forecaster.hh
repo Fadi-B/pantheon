@@ -21,6 +21,8 @@ public:
     static const uint16_t ms_per_sec = 60; /* We should be careful with this one as we are forecasting 20ms into the future*/
     static const uint8_t iModel = 1;
 
+    static const uint16_t NUM_TICKS = 8;
+
 
     KFForecaster(double initBandwidth, double initRTTGrad, double initQueueDelay, double initInterArrival)
     :state(initBandwidth, initRTTGrad, initQueueDelay, initInterArrival)
@@ -57,10 +59,10 @@ public:
     void forecast(uint8_t tick_number)
     {
 
-        int size = sizeof(bytes_to_be_drained) / (8);
-
         for (int i=0; i < tick_number; i++)
         {
+
+	    fprintf(stderr, "Given Number: %d \n", tick_number);
 
             state.predict(Q);
 
@@ -117,7 +119,7 @@ public:
         /* Stored in Mbits/s */
         double rate = state.mean()(KF::iBand); //- 2*stddev;
 
-        double bytes = ((ms_per_sec * 1000) * rate) / bits;
+        double bytes =  ((ms_per_sec * 1000) * rate) / bits;
 
         return bytes;
 
@@ -131,9 +133,7 @@ public:
     void clearForecast()
     {
 
-	    int size = sizeof(bytes_to_be_drained) / (8);
-
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < NUM_TICKS; i++)
 
 	    {
 
@@ -168,7 +168,7 @@ private:
     /* Forecast Model that we have learnt offline */
     KF::Vector forecastModel;
 
-    double bytes_to_be_drained[8];
+    double bytes_to_be_drained[NUM_TICKS];
 
 
     /* Initialization functions */

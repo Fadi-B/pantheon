@@ -63,7 +63,7 @@ void Receiver::advance_to( const uint64_t time, bool server )
     {
       _KFforecaster.forecast(1); //Works
     }
-    
+
 
     if ( (_time >= _score_time) || (_count_this_tick > 0) ) {
 
@@ -179,8 +179,8 @@ Sprout::DeliveryForecast Receiver::forecast( bool server )
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
       //fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
       //if (iter == _KFforecaster.getBytesToBeDrained().end()) {fprintf(stderr, "Mugi \n");}
-      double expected_drainage = fadi[tick];
       //fprintf(stderr, "Tick: %d \n", tick);
+      double expected_drainage = fadi[tick];
       //fprintf(stderr, "Drain: %f \n", expected_drainage);
       //Note: For now we have not added any uncertainty bounds
       if ( server )

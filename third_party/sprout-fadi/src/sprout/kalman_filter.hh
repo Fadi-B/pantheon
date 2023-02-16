@@ -46,6 +46,9 @@ public:
     void predict(Matrix Q)
     {
 
+	 //Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+	 //std::cerr << "\n F \n" << F.format(CleanFmt);
+
 	    /* Checking correct dimensions */
 	    //assert(  );
         //fprintf(stderr, "Pre Pred: %f \n", _mean(iBand, 0));
