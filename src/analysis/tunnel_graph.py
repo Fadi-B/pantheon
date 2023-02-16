@@ -248,7 +248,9 @@ class TunnelGraph(object):
                 1000.0 * self.total_duration)
 
         self.total_percentile_delay = None
+        self.avg_delays = None
         if total_delays:
+            self.avg_delays = np.mean(total_delays)
             self.total_percentile_delay = np.percentile(
                 total_delays, 95, interpolation='nearest')
 
@@ -367,6 +369,8 @@ class TunnelGraph(object):
                 100.0 * self.total_avg_egress / self.avg_capacity)
         ret += '\n'
 
+        if self.avg_delays is not None:
+            ret += ('Average per-packet one-way delay: %.3f ms\n' % self.avg_delays)
         if self.total_percentile_delay is not None:
             ret += ('95th percentile per-packet one-way delay: %.3f ms\n' %
                     self.total_percentile_delay)
