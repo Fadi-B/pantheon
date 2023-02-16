@@ -24,7 +24,27 @@ schemes:
     color: skyblue
     marker: 'H'
   sprout:
-    name: Sprout
+    name: Sprout (95%)
+    color: orange
+    marker: 'p'
+  sprout-75:
+    name: Sprout (75%)
+    color: orange
+    marker: 'p'
+  sprout-50:
+    name: Sprout (50%)
+    color: orange
+    marker: 'p'
+  sprout-25:
+    name: Sprout (25%)
+    color: orange
+    marker: 'p'
+  sprout-5:
+    name: Sprout (5%)
+    color: orange
+    marker: 'p'
+  sprout-0:
+    name: Sprout (0%)
     color: orange
     marker: 'p'
   quic:
