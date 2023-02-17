@@ -25,7 +25,7 @@ a list of timestamps.
 
 def get_bin_capacities(file, ms_per_bin):
     
-    MSS = 1420
+    MSS = 1400
 
     trace = open(file)
     
