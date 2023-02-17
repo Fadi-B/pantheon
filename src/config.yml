@@ -105,5 +105,5 @@ schemes:
     marker: 'D'
   sprout-fadi:
     name: Sprout-Fadi
-    color: green
-    marker: '<'
+    color: lime
+    marker: 'p'
