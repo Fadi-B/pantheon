@@ -19,7 +19,7 @@ def main():
 
     if args.option == 'sender':
         cmd = ['iperf3', '-C', 'cubic', '-c', args.ip, '-p', args.port,
-               '-t', '75']
+               '-t', '1200']
         check_call(cmd)
         return
 

@@ -28,7 +28,7 @@ def main():
         return
 
     if args.option == 'sender':
-        cmd = [send_src, '-name', utils.tmp_dir, '-p', args.port, '-t', '75']
+        cmd = [send_src, '-name', utils.tmp_dir, '-p', args.port, '-t', '1200']
         check_call(cmd, cwd=utils.tmp_dir)
         return
 
