@@ -17,7 +17,7 @@ schemes:
     marker: '<'
   pcc:
     name: PCC-Allegro
-    color: cyan
+    color: cadetblue
     marker: '>'
   verus:
     name: Verus
