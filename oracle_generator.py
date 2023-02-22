@@ -29,6 +29,11 @@ def create_oracle_data(trace, granularity, delay_factor, oracle_filename):
             break
     
     rate_oracle = rate[ignore_index + 1:]
+
+    N = 3
+
+    #rate_oracle = np.convolve(rate_oracle, np.ones((N,))/N, mode='valid')
+
     rate_oracle = np.concatenate(([granularity], rate_oracle)) #Add granularity at head of list
     
     # The time array is not used in the bytes version
@@ -55,6 +60,16 @@ def main():
 
     
     create_oracle_data(trace_file, granularity, PANTH_DELAY_FACTOR, oracle_name)
+
+    with open(r"oracle.txt", 'r') as fp:
+
+    	for count, line in enumerate(fp):
+
+          pass
+
+    f = open("oracle_size.txt", "w")
+    f.write(str(count + 1))
+    f.close()
 
 if __name__ == '__main__':
     main()

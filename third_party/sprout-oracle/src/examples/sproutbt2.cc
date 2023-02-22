@@ -7,13 +7,15 @@
 #include "sproutconn.h"
 #include "select.h"
 
-#include "file_reader.hh"
+//#include "file_reader.hh"
 #include <list>
 
 #include <chrono>
+#include <cmath>
 
 using namespace std;
 using namespace Network;
+
 
 int main( int argc, char *argv[] )
 {
@@ -22,7 +24,7 @@ int main( int argc, char *argv[] )
 
   Network::SproutConnection *net;
 
-  std::chrono::high_resolution_clock::time_point _start_time_point( chrono::high_resolution_clock::now() );
+  //std::chrono::high_resolution_clock::time_point _start_time_point( chrono::high_resolution_clock::now() );
 
   bool server = true;
   bool start = true;
@@ -86,14 +88,67 @@ int main( int argc, char *argv[] )
 
   fprintf( stderr, "Looping...\n" );
 
-  std::list<uint64_t> oracle;
+  /* Loading the oracle */
 
-  oracle = read_file_int("oracle.txt");
+  std::ifstream sizeF("oracle_size.txt");
 
-  auto it = oracle.begin();// + 61; /* +61 offset to start at 3s*/
+  uint64_t SIZE = 0;
 
-  fallback_interval = *it;
-  it++;
+  // Read first line as it represents size of oracle data
+  if (sizeF) {
+
+    sizeF >> SIZE;
+
+  }
+
+  int oracle[SIZE];
+
+  string line;
+  int value;
+  ifstream file ("oracle.txt");
+
+  int counter = 0;
+
+ if(file.is_open())
+  {
+
+     while(!file.eof())
+     {
+
+        getline(file, line);
+
+        try
+        {
+
+           value = stoi(line);
+
+        }
+        catch (std::invalid_argument const& ex)
+        {
+
+        }
+
+//        cout << line << endl;
+
+//        fprintf(stderr, " \n");
+
+        oracle[ counter ] = ((int) value);
+
+        //fprintf(stderr, "FIRST ENTRY: %d \n", data[0]);
+
+        counter = counter + 1;
+
+     }
+    //fprintf(stderr, "OUT: %d \n", 3);
+
+        file.close();
+
+  }
+
+  std::chrono::high_resolution_clock::time_point _start_time_point( chrono::high_resolution_clock::now() );
+  double cur = CollectorManager::getCurrentTime(_start_time_point);
+  fprintf(stderr, "CUR: %f \n", cur);
+  fallback_interval = oracle[((int)cur)];
 
   uint64_t time_of_next_transmission = timestamp() + fallback_interval; //We want to send instantly
   uint64_t time_of_rate_adjustment = timestamp() + new_rate_interval;
@@ -102,6 +157,7 @@ int main( int argc, char *argv[] )
 
   /* Make sure it is initialized so we do not miss first iteration */
   int bytes;
+  int rounded;
 
   /* loop */
   while ( 1 ) {
@@ -110,31 +166,6 @@ int main( int argc, char *argv[] )
     if ( server ) {
       bytes_to_send = 0;
     }
-
-    //fprintf(stderr, "To Send: %d \n", bytes);
-/*
-    if (time_of_rate_adjustment <= timestamp())
-    {
-
-      if (it != oracle.end())
-      {
-
-        it++;
-        bytes = *it;
-
-      }
-      else
-      {
-
-        bytes = 0;
-
-      }
-
-       time_of_rate_adjustment = std::max( timestamp() + new_rate_interval,
-                                            time_of_rate_adjustment );
-
-    }
-*/
 
     /* actually send, maybe */
     if ( /*( bytes_to_send > 0 ) &&*/ ( time_of_next_transmission <= timestamp() ) ) {
@@ -148,31 +179,22 @@ int main( int argc, char *argv[] )
 
       }
 
-      bytes = *it;
+      cur = CollectorManager::getCurrentTime(_start_time_point);
+      rounded = (int)ceil(cur / fallback_interval);
+
+      //if (server) {fprintf(stderr, "Server Time: %f Rounded: %d \n", cur, rounded);} else {fprintf(stderr, "Client Time: %f Rounded: %d \n", cur, rounded);}
+      //fprintf(stderr, "Rounded: %d \n", rounded);
+      bytes = oracle[rounded - 1];
 
       bytes_to_send = std::max(bytes - 20, 0);
+
+      //rounded = rounded + 1;
 
       //fprintf(stderr, "To Send: %d \n", bytes);
 
       /* How much to send in this tick */
      // bytes_to_send = (bytes / new_rate_interval) * fallback_interval;
       //bytes_to_send = std::max(bytes_to_send - 20, 0);
-
-
-      
-      if (it != oracle.end())
-      {
-
-        it++;
-
-      }
-      else
-      {
-
-        bytes = 0;
-
-      }
-      
 
 //      if (bytes_to_send == 0) {fprintf(stderr, "Zero \n");}
 
