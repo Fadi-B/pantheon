@@ -106,7 +106,14 @@ public:
 //        else
 //        {
 
-        double slope = numerator / denominator;
+	double slope = 0;
+
+        if (denominator != 0)
+        {
+
+	  slope = numerator / denominator;
+
+        }
 
 //        }
 

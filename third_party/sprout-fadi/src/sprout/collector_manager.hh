@@ -77,9 +77,9 @@ public:
         	    (*itr)->compute();
                 (*itr)->resetHelperData();
 
-                std::list< double > data = (*itr)->getData();
+//                std::list< double > data = (*itr)->getData();
 
-                (*itr)->saveData(data);
+//                (*itr)->saveData(data);
             }
 
             switch((*itr)->getType())
