@@ -52,9 +52,17 @@ public:
 	    /* Checking correct dimensions */
 	    //assert(  );
         //fprintf(stderr, "Pre Pred: %f \n", _mean(iBand, 0));
-        const Vector new_mean = F * _mean;
+        Vector new_mean = F * _mean;
         //new_mean(iBand, 0) = 1;
         const Matrix newP = F * _cov * F.transpose() + Q;
+
+        // Max function does not seem to work so will be doing it manually
+	    double throughput = new_mean[iBand];
+
+	    if (throughput < 0)
+	    {
+	        new_mean[iBand] = 0;
+	    }
 
         _cov = newP;
         _mean = new_mean;
