@@ -23,7 +23,7 @@ public:
     static const int WINDOW_LENGTH = 1; /* Will start off with 1 window length for prototyping */
 
     typedef Eigen::Matrix<double, KF::DIM, 1> Vector;
-    typedef Eigen::Matrix<double, WINDOW_LENGTH, KF::DIM> Matrix;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, KF::STATE_SIZE> Matrix;
 
     static double getCurrentTime( std::chrono::high_resolution_clock::time_point &start_time )
     {
@@ -123,15 +123,17 @@ public:
     }
 
     /**
-     * @brief Get the Congestion Signals History o
+     * @brief Get the Congestion Signals History
      * 
      * @param window_length 
      * @return Matrix 
      */
-    Matrix getCongestionSignalsHistory()
+    Matrix getCongestionSignalsHistory(const int window)
     {
 
-        Matrix congestion_history;
+	// Need to declare dynamic since window is not considered a constant
+        Matrix congestion_history = Matrix::Zero(window, KF::STATE_SIZE);
+
 
         congestion_history(0, KF::iBias) = 1;
 
@@ -161,10 +163,13 @@ public:
 
                 auto obj = *revitr;
 
-                if (row_index < WINDOW_LENGTH)
+                if (row_index < window)
                 {
 
                     congestion_history(row_index, column_index) = obj;
+
+		    // Ensure that bias assigned
+                    congestion_history(row_index, 0) = 1;
 
                 }
                 else

@@ -44,6 +44,7 @@ public:
 
     }
 
+    /* For debugging */
     void showdata (double *data,  int n) {
   	int i; 
 
@@ -62,7 +63,7 @@ public:
         for (int i=0; i < tick_number; i++)
         {
 
-	    fprintf(stderr, "Given Number: %d \n", tick_number);
+	    //fprintf(stderr, "Given Number: %d \n", tick_number);
 
             state.predict(Q);
 
@@ -92,19 +93,38 @@ public:
 
     }
 
-    void correctForecast(KF::Vector observed)
+    void correctForecast(CollectorManager::Matrix observed)
     {
 
-        /* Ensure we convert the packets seen into Mbits/s as we are working with that */
-        //double packets_received = observed(KF::iBand, 1);
-        //observed(KF::iBand, 1) = PacketCollector::to_bits_per_sec(packets_received);
+        Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+
+        Eigen::Matrix<double, KF::DIM, 1> obs; //= observed.row(0).transpose();
+
+//        std::cerr << "\n OBS-PRE \n" << obs.format(CleanFmt) << "\n";
+
+      	for (int i = 0; i < KF::HISTORY_SIZE; i++)
+        {
+	  //108
+          Eigen::Matrix<double, 1, KF::STATE_SIZE> data = observed.row(i);
+
+
+          for (int j = 0; j < KF::STATE_SIZE; j++)
+          {
+
+	    obs(i*KF::STATE_SIZE + j, 0) = data(0, j);
+
+          }
+
+        }
+
+       std::cerr << "\n OBS-Post \n" << obs.format(CleanFmt) << "\n";
 
         double b = ((ms_per_sec * 1000) * observed(KF::iBand, 0))/bits;
 
 //        fprintf(stderr, "Correct Obs: %f \n", b/*observed(KF::iBand, 0)*/);
 //        fprintf(stderr, "Current Mean: %f \n", state.mean()(KF::iBand));
 	fprintf(stderr, "Correcting \n");
-        state.update(observed, R);
+        state.update(obs, R);
 
     }
 
@@ -114,7 +134,7 @@ public:
 	double uncertainty = state.cov()(KF::iBand, KF::iBand);
 	double stddev = std::sqrt(uncertainty);
 
-	fprintf(stderr, "Stddev: %f \n", stddev);
+	//fprintf(stderr, "Stddev: %f \n", stddev);
 
         /* Stored in Mbits/s */
         double rate = state.mean()(KF::iBand); //- 2*stddev;
@@ -217,3 +237,4 @@ private:
 
 
 };
+

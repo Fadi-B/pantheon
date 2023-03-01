@@ -15,6 +15,8 @@
 
 #include "kalman_filter.hh"
 
+#include <Eigen/Dense>
+
 using namespace std;
 
 Receiver::Receiver()
@@ -71,7 +73,10 @@ void Receiver::advance_to( const uint64_t time, bool server )
       {
 
        /* Currently 1 x 5 */ //Works
-      CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory();
+       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(5);
+
+//      Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+//      std::cerr << "\n MEASU \n" << measurement.format(CleanFmt) << "\n";
 
       int rounded_bytes = int( _count_this_tick + 0.5 );
 
@@ -86,7 +91,7 @@ void Receiver::advance_to( const uint64_t time, bool server )
 
       }
 	//fprintf(stderr, "Meas. Recv: %f \n", (60*1000*measurement(0, KF::iBand))/(1500*8));
-      _KFforecaster.correctForecast(measurement.transpose());
+      _KFforecaster.correctForecast(measurement);
 
       const double alpha = 1.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );

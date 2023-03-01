@@ -17,8 +17,12 @@ public:
     static const int iQueueDelay = 3;
     static const int iInterArrival = 4;
 
+    static const int HISTORY_SIZE = 1;
+
+    static const int STATE_SIZE = 5;
+
     /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival]*/
-    static const int DIM = 5;
+    static const int DIM = HISTORY_SIZE * STATE_SIZE;
 
     typedef Eigen::Matrix<double, DIM, 1> Vector;
     typedef Eigen::Matrix<double, DIM, DIM> Matrix;
@@ -27,11 +31,28 @@ public:
     {
 
         /* State Initialization */
-	    _mean(iBias) = 1;	   //Will always be 1
-        _mean(iBand) = initBandwidth; //
-        _mean(iRTTG) = initRTTGrad;
-        _mean(iQueueDelay) = initQueueDelay;
-	    _mean(iInterArrival) = initInterArrival;
+
+        double init[STATE_SIZE] = {1, initBandwidth, initRTTGrad, initQueueDelay, initInterArrival};
+
+        for (int i = 0; i < DIM; i++)
+        {
+
+	  //For now initialize all other historic data as 0
+	  if (i < STATE_SIZE)
+          {
+
+            _mean(i, 0) = init[i];
+
+          }
+
+          else
+          {
+
+           _mean(i, 0) = 0;
+
+          }
+
+        }
 
         _cov.setIdentity();
 
@@ -88,13 +109,13 @@ public:
 
 	//fprintf(stderr, "Kalman Gain: %f \n", K(iBand, 0));
 
-	std::cerr << "\n Pre-Cov \n" << _cov.format(CleanFmt) << "\n";
+//	std::cerr << "\n Pre-Cov \n" << _cov.format(CleanFmt) << "\n";
 
         Vector new_mean = _mean + K * y;
         Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
 
-	std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
-	std::cerr << "\n Post-Cov \n" << new_cov.format(CleanFmt) << "\n";
+//	std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
+//	std::cerr << "\n Post-Cov \n" << new_cov.format(CleanFmt) << "\n";
 
         //fprintf(stderr, "Post Update: %f \n", _mean(iBand, 0));
 
@@ -239,7 +260,7 @@ public:
     {
         return _mean(iQueueDelay);
     }
- 
+
 private:
 
     /* State Space Representation */
@@ -257,3 +278,4 @@ private:
     //NoiseGenerator::Generator generator = (*gen).get_generator();
 
 };
+
