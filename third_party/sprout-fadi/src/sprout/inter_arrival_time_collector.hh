@@ -56,6 +56,9 @@ public:
 
         /* Used to compute the average */
         double sum_of_inter_arrival_times = 0;
+        double inter_arrival_ewma = ewma_inter_arrival_time; //Start from previous value
+
+        double alpha = 1.0/4.0;
 
         /* Looping until next to last to ensure we do not go out of bounds */
         for (auto it = helper_data.begin(); it != helper_data.end(); it++)
@@ -64,6 +67,7 @@ public:
             auto obj = *it;
 
             sum_of_inter_arrival_times = sum_of_inter_arrival_times + obj;
+            inter_arrival_ewma = (1 - alpha) * inter_arrival_ewma + alpha * obj;
 
         }
 
@@ -78,6 +82,9 @@ public:
             inter_arrival_time = sum_of_inter_arrival_times / size;
 
         }
+
+	// NOTE: THIS IS OVERRIDING THE AVERAGE INTER_ARRIVAL_TIME CALCULATION
+        inter_arrival_time = inter_arrival_ewma;
 
         ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time);
 

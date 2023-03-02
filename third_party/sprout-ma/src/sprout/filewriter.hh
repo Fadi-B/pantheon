@@ -11,20 +11,29 @@ public:
     FileWriter()
     {
 
+      count = 0;
+
     }
 
-    void write_to_file(std::string filename, std::list<double> &data) 
+    void write_to_file(std::string filename, std::list<double> &data)
     {
 
         std::fstream file;
 
         /* This will by default delete the current content of the file */
+//        file.open(filename, std::ios_base::app);
         file.open(filename, std::ios_base::out);
 
-        for (auto it = data.begin(); it != data.end(); it++) {
+        auto it = data.begin();
+
+	//std::advance(it, count);
+
+        for (it; it != data.end(); it++) {
 
             auto obj = *it;
             file<<obj<<std::endl;
+
+            //count = count + 1;
 
         }
 
@@ -33,6 +42,10 @@ public:
         return;
 
     }
+
+private:
+
+  int count = 0;
 
 };
 

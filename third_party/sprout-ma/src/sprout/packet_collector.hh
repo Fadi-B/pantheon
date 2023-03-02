@@ -19,6 +19,20 @@ public:
     static const int MSS = 1500;     /* Bytes */
     static const int BYTE_SIZE = 8;  /* Bits */
 
+    static double to_bits_per_sec(double packets, double tick_time)
+    {
+
+        int bits = MSS * BYTE_SIZE;
+
+        double total_bits = packets * bits;
+
+        /* Dealing with Mbits/s throughout */
+        double Mbits_per_sec = total_bits / (tick_time*1000);
+
+        return Mbits_per_sec;
+
+    }
+
     PacketCollector(double tick_time)
     :Collector(tick_time)
     {
@@ -45,15 +59,11 @@ public:
 
         //fprintf(stderr, "Helper2: %f \n", helper_data);
 
-        int bits = MSS * BYTE_SIZE;
+        double Mbits_per_sec = to_bits_per_sec(helper_data, TICK_TIME);
 
-        double total_bits = helper_data * bits;
+        data.push_back(Mbits_per_sec);
 
-        double bits_per_sec = total_bits / (TICK_TIME*1000);
-
-        data.push_back(bits_per_sec);
-
-	return bits_per_sec;
+	    return Mbits_per_sec;
 
     }
 
@@ -69,7 +79,7 @@ public:
         helper_data = 0;
         data.clear();
 
-	data.push_back(TICK_TIME);
+	    data.push_back(TICK_TIME);
     }
 
     double getHelperData() 
@@ -79,7 +89,7 @@ public:
 
     void saveData(std::list<double> &data)
     {
-        //fprintf(stderr, "data: %f \n", *(data.rbegin()));
+
         writer.write_to_file("throughput_data.csv", data);
 
     }

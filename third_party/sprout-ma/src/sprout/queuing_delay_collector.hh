@@ -26,6 +26,9 @@ public:
         /* Dummy initialization - Update function will do the true updating */
         MIN_RTT = 0;
 
+        /* Assume no delay at the start of connection - reasonable assumption to make */
+        queuing_delay = 0;
+
     }
 
     Type getType() const override
@@ -55,24 +58,40 @@ public:
     {
 
         double sum = 0;
+        double rtt_ewma = queuing_delay; //start from previous value we had
+
+        double alpha = 1.0/4.0;
 
         for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
 
-	        auto obj = *it;
-        
+	    auto obj = *it;
+
             sum = sum + obj;
+            rtt_ewma = (1 - alpha) * rtt_ewma + ( alpha * obj );
 
         }
 
-        /* RTT for this tick will be considered as the average */
-        double RTT = sum / ( helper_data.size() );
+        /* Assign it min RTT by default */
+        double RTT = MIN_RTT;
 
-        double queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * RTT - MIN_RTT); 
+        uint16_t size = helper_data.size();
+
+        if ( size > 0)
+        {
+            /* RTT for this tick will be considered as the average */
+            RTT = sum / size;
+
+        }
+
+	//NOTE: THIS IS OVERRIDING THE AVERAGE RTT CALCULATION
+        RTT = rtt_ewma;
+
+        queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) ); 
 
         data.push_back(queuing_delay);
 
-	    return queuing_delay;
+	return queuing_delay;
 
     }
 
@@ -108,6 +127,8 @@ private:
     std::list< double > helper_data;
 
     double MIN_RTT;
+
+    double queuing_delay;
 
 };
 

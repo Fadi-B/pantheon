@@ -23,7 +23,7 @@ public:
     static const int RECEPTION_INDEX = 1;
 
     /* Currently set to very high as we will consider all packets for now */
-    static const int MAX_RTT = 1000000000; /* Default 50000 in Sprout smoothed RTT calculation */
+    static const int MAX_RTT = 50000; /* Default 50000 in Sprout smoothed RTT calculation */
 
     static constexpr double LOW_PASS_FILTER_CUT_OFF = 0.015;
 
@@ -87,40 +87,35 @@ public:
         }
 
         double numerator = size*sumXY - sumX*sumY;
-	double denominator = size*sumX_squared - sumX*sumX;
+	    double denominator = size*sumX_squared - sumX*sumX;
 
-//	fprintf(stderr, "Start \n");
-/*
-        if (1) {
-
-        for (auto it = helper_data.begin(); it != helper_data.end(); it++)
-        {
-
-	    auto obj = *it;
-
-            double x_coord = get<RECEPTION_INDEX>(obj);
-            double y_coord = get<RTT_INDEX>(obj);
-
-            fprintf(stderr, "RTT: %f STAMP: %f \n", y_coord, x_coord);
-
-        }
-
-        }
-
-	if (denominator == 0) {
-
-        fprintf(stderr, "Denominator: %f \n", denominator);
-	fprintf(stderr, "Numerator: %f \n", numerator);
-
-
-        }
-
-	fprintf(stderr, "End \n");
-*/
         /* Calculating slope of linear fit */
 
-	/* IMPORTANT: Will return NAN if no data observed or no unique solution */
-        double slope = (size*sumXY - sumX*sumY) / (size*sumX_squared - sumX*sumX);
+	    /* IMPORTANT: Will return NAN if no data observed or no unique solution */
+        /* We have to be careful with the NAN as otherwise the Kalman Filter implementation would crash*/
+
+//        double slope;
+
+        /* Should never happen but to ensure robustness */
+//        if ((numerator == 0 && denominator == 0) || denominator == 0)
+//        {
+
+//            slope = 0;
+
+//        }
+//        else
+//        {
+
+	double slope = 0;
+
+        if (denominator != 0)
+        {
+
+	  slope = numerator / denominator;
+
+        }
+
+//        }
 
         /* This is employed to avoid network jitter that can be misleading about the measurement */
         if (abs(slope) < LOW_PASS_FILTER_CUT_OFF)

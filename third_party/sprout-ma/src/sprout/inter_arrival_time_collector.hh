@@ -23,6 +23,8 @@ public:
     :Collector(tick_time)
     {
 
+	count = 0;
+    ewma_inter_arrival_time = 0;
 
     }
 
@@ -43,7 +45,7 @@ public:
             helper_data.push_back(inter_arrival_time);
 
         }
-        
+
 
         return;
 
@@ -54,24 +56,43 @@ public:
 
         /* Used to compute the average */
         double sum_of_inter_arrival_times = 0;
+        double inter_arrival_ewma = ewma_inter_arrival_time; //Start from previous value
+
+        double alpha = 1.0/4.0;
 
         /* Looping until next to last to ensure we do not go out of bounds */
         for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
-            
+
             auto obj = *it;
 
             sum_of_inter_arrival_times = sum_of_inter_arrival_times + obj;
+            inter_arrival_ewma = (1 - alpha) * inter_arrival_ewma + alpha * obj;
 
         }
 
-        double inter_arrival_time = sum_of_inter_arrival_times / helper_data.size();
+        /* Assign it 0 by default */
+        double inter_arrival_time = 0;
 
-        double ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time); 
+        uint16_t size = helper_data.size();
+
+        if ( size > 0 && count > 1) //count > 1 to avoid large inter_arrival_time measured due to startup connection
+        {
+
+            inter_arrival_time = sum_of_inter_arrival_times / size;
+
+        }
+
+	// NOTE: THIS IS OVERRIDING THE AVERAGE INTER_ARRIVAL_TIME CALCULATION
+        inter_arrival_time = inter_arrival_ewma;
+
+        ewma_inter_arrival_time = (1 - EWMA_WEIGHT) * ewma_inter_arrival_time + (EWMA_WEIGHT * inter_arrival_time);
 
         data.push_back(ewma_inter_arrival_time);
 
-	    return ewma_inter_arrival_time;
+        count = count + 1;
+
+	return ewma_inter_arrival_time;
 
     }
 
@@ -105,7 +126,11 @@ public:
 
 private:
 
+    uint16_t count;
+
     std::list< double > helper_data;
+
+    double ewma_inter_arrival_time;
 
 };
 

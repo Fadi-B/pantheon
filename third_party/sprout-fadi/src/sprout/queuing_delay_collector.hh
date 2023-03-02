@@ -58,13 +58,17 @@ public:
     {
 
         double sum = 0;
+        double rtt_ewma = queuing_delay; //start from previous value we had
+
+        double alpha = 1.0/4.0;
 
         for (auto it = helper_data.begin(); it != helper_data.end(); it++)
         {
 
-	        auto obj = *it;
-        
+	    auto obj = *it;
+
             sum = sum + obj;
+            rtt_ewma = (1 - alpha) * rtt_ewma + ( alpha * obj );
 
         }
 
@@ -80,11 +84,14 @@ public:
 
         }
 
+	//NOTE: THIS IS OVERRIDING THE AVERAGE RTT CALCULATION
+        RTT = rtt_ewma;
+
         queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) ); 
 
         data.push_back(queuing_delay);
 
-	    return queuing_delay;
+	return queuing_delay;
 
     }
 
