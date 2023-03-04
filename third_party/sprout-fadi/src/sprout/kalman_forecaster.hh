@@ -100,7 +100,7 @@ public:
 
         Eigen::Matrix<double, KF::DIM, 1> obs; //= observed.row(0).transpose();
 
-//        std::cerr << "\n OBS-PRE \n" << obs.format(CleanFmt) << "\n";
+        std::cerr << "\n Measurement \n" << observed.format(CleanFmt) << "\n";
 
       	for (int i = 0; i < KF::HISTORY_SIZE; i++)
         {
@@ -111,11 +111,15 @@ public:
           for (int j = 0; j < KF::STATE_SIZE; j++)
           {
 
-	    obs(i*KF::STATE_SIZE + j, 0) = data(0, j);
+	    // Note: The +1 is to make sure we do not override bias
+	    obs(i*KF::STATE_SIZE + j + 1, 0) = data(0, j);
 
           }
 
         }
+
+       // Adding the bias
+       obs(0,0) = 1;
 
        std::cerr << "\n OBS-Post \n" << obs.format(CleanFmt) << "\n";
 
@@ -198,7 +202,7 @@ private:
         double COLUMN = 0; /* Vector will just have 1 column */
 
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
-        double params[KF::DIM] = {0.01622525, 1, -0.004615, -0.000017466, -0.0011150}; //TMobile UMTS
+        double params[KF::DIM] = {-0.00205892, 1, -0.0000146780254, -0.00000953524668, 0.000190260663, 0, 0, 0, 0}; //TMobile UMTS
 
 	//double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
 

@@ -135,7 +135,7 @@ public:
         Matrix congestion_history = Matrix::Zero(window, KF::STATE_SIZE);
 
 
-        congestion_history(0, KF::iBias) = 1;
+        //congestion_history(0, KF::iBias) = 1;
 
         /* Note: Collectors will be looped over in the order
          *
@@ -148,7 +148,7 @@ public:
          * 
          */
 
-        uint16_t column_index = 1; /* Starts at 1 since we have already intialized the bias column */
+        uint16_t column_index = 0;
 
         for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
         {
@@ -169,7 +169,7 @@ public:
                     congestion_history(row_index, column_index) = obj;
 
 		    // Ensure that bias assigned
-                    congestion_history(row_index, 0) = 1;
+                    // congestion_history(row_index, 0) = 1;
 
                 }
                 else

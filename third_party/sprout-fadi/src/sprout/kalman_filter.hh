@@ -17,12 +17,18 @@ public:
     static const int iQueueDelay = 3;
     static const int iInterArrival = 4;
 
-    static const int HISTORY_SIZE = 1;
+    static const int HISTORY_SIZE = 2;
 
-    static const int STATE_SIZE = 5;
+    /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival] 
+     *
+     * However, we will only have 1 bias through all historic states, which is why we encode the state size as 4
+     */
+    static const int STATE_SIZE = 4;
 
-    /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival]*/
-    static const int DIM = HISTORY_SIZE * STATE_SIZE;
+    /* Note: The +1 at the end is to make sure we include an additional space for the bias
+     *
+     */
+    static const int DIM = HISTORY_SIZE * STATE_SIZE + 1;
 
     typedef Eigen::Matrix<double, DIM, 1> Vector;
     typedef Eigen::Matrix<double, DIM, DIM> Matrix;
@@ -32,23 +38,26 @@ public:
 
         /* State Initialization */
 
-        double init[STATE_SIZE] = {1, initBandwidth, initRTTGrad, initQueueDelay, initInterArrival};
+        double init[STATE_SIZE] = {initBandwidth, initRTTGrad, initQueueDelay, initInterArrival};
 
-        for (int i = 0; i < DIM; i++)
+	// Adding Bias
+        _mean(0, 0) = 1;
+
+        for (int i = 0; i < DIM - 1; i++)
         {
 
 	  //For now initialize all other historic data as 0
 	  if (i < STATE_SIZE)
           {
 
-            _mean(i, 0) = init[i];
+            _mean(i+1, 0) = init[i];
 
           }
 
           else
           {
 
-           _mean(i, 0) = 0;
+           _mean(i+1, 0) = 0;
 
           }
 
