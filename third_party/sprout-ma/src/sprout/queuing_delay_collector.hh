@@ -85,7 +85,7 @@ public:
         }
 
 	//NOTE: THIS IS OVERRIDING THE AVERAGE RTT CALCULATION
-        RTT = rtt_ewma;
+        //RTT = rtt_ewma;
 
         queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) ); 
 

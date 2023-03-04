@@ -29,6 +29,9 @@ public:
         /* Assume no delay at the start of connection - reasonable assumption to make */
         queuing_delay = 0;
 
+	/* Assume we start at MIN_RTT*/
+        prev_rtt = MIN_RTT;
+
     }
 
     Type getType() const override
@@ -58,7 +61,7 @@ public:
     {
 
         double sum = 0;
-        double rtt_ewma = queuing_delay; //start from previous value we had
+        double rtt_ewma = prev_rtt; //start from previous value we had - not working fully - getting negative values
 
         double alpha = 1.0/4.0;
 
@@ -85,9 +88,11 @@ public:
         }
 
 	//NOTE: THIS IS OVERRIDING THE AVERAGE RTT CALCULATION
-        RTT = rtt_ewma;
+        //RTT = rtt_ewma;
 
-        queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) ); 
+        queuing_delay = (1 - EWMA_WEIGHT) * queuing_delay + ( EWMA_WEIGHT * (RTT - MIN_RTT) );
+
+        prev_rtt = rtt_ewma;
 
         data.push_back(queuing_delay);
 
@@ -127,6 +132,7 @@ private:
     std::list< double > helper_data;
 
     double MIN_RTT;
+    double prev_rtt;
 
     double queuing_delay;
 

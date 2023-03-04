@@ -21,19 +21,19 @@ public:
         std::fstream file;
 
         /* This will by default delete the current content of the file */
-//        file.open(filename, std::ios_base::app);
-        file.open(filename, std::ios_base::out);
+        file.open(filename, std::ios_base::app);
+//        file.open(filename, std::ios_base::out);
 
         auto it = data.begin();
 
-	//std::advance(it, count);
+	      std::advance(it, count);
 
         for (it; it != data.end(); it++) {
 
             auto obj = *it;
             file<<obj<<std::endl;
 
-            //count = count + 1;
+            count = count + 1;
 
         }
 
