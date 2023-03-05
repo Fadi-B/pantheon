@@ -96,7 +96,7 @@ schemes:
     color: pink
     marker: '+'
   sprout-sewma:
-    name: Sprout-SEWMA
+    name: Sprout-RW
     color: silver
     marker: 'h'
   sprout-oracle:

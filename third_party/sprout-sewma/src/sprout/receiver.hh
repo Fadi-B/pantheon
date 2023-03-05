@@ -22,6 +22,8 @@ private:
   static const int MAX_ARRIVALS_PER_TICK = 30;
   static const int NUM_TICKS = 8;
 
+  static const int HISTORIC_LENGTH = 8;
+
   class RecvQueue {
   private:
     class PacketLen {
@@ -59,9 +61,12 @@ private:
   RecvQueue _recv_queue;
 
   double _ewma_rate_estimate;
+  std::vector<double> _prev_ewma_rates;
+  int _historic_count;
+  double _std_estimate;
 
   /* Creating the Gaussian Noise generator */
-  NoiseGenerator gen = NoiseGenerator(0, 2, 1);
+  NoiseGenerator gen = NoiseGenerator(0, 0, 0);
   NoiseGenerator::Generator generator = gen.get_generator();
 
 public:

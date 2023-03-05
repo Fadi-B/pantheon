@@ -20,7 +20,10 @@ Receiver::Receiver()
     _count_this_tick( 0 ),
     _cached_forecast(),
     _recv_queue(),
-    _ewma_rate_estimate( 1 )
+    _ewma_rate_estimate( 1 ),
+    _prev_ewma_rates(HISTORIC_LENGTH, 0),
+    _historic_count(0),
+    _std_estimate(0)
 {
   for ( int i = 0; i < NUM_TICKS; i++ ) {
     ProcessForecastInterval one_forecast( .001 * TICK_LENGTH,
@@ -42,12 +45,28 @@ void Receiver::advance_to( const uint64_t time )
 
       const double alpha = 1.0 / 8.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
-      
+
       /* Non-Random Walk Addition */
       //_ewma_rate_estimate = _ewma_rate_estimate + gen.get_noise(generator);
 
+      if (_historic_count < HISTORIC_LENGTH)
+      {
 
-      fprintf(stderr, "COUNT: %f \n", _count_this_tick);
+           _prev_ewma_rates[_historic_count] = _ewma_rate_estimate;
+           _historic_count = _historic_count + 1;
+
+      }
+      else
+      {
+
+        _std_estimate = gen.calculate_std(_prev_ewma_rates);
+        _historic_count = 0;
+
+        //Updating std of noise generator
+        gen.set_std(_std_estimate);
+      }
+
+      fprintf(stderr, "std: %f \n", _std_estimate);
       _count_this_tick = 0;
 
     } else {
@@ -95,7 +114,7 @@ Sprout::DeliveryForecast Receiver::forecast( void )
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
 
       _cached_forecast.add_counts(accumulate_estimate);
-
+      fprintf(stderr, "noise: %f \n", gen.get_noise(generator));
       noisy_estimate = noisy_estimate + gen.get_noise(generator);
       accumulate_estimate = accumulate_estimate + noisy_estimate;
 

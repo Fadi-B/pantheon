@@ -3,6 +3,8 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#include <numeric>
+
 /**
  * @brief This class generated gaussian noise
  * 
@@ -66,6 +68,34 @@ public:
 
     }
 
+    void set_std(double new_std)
+    {
+
+      _std = new_std;
+
+    }
+
+    void set_mean(double new_mean)
+    {
+
+      _mean = new_mean;
+
+    }
+
+    double calculate_std(std::vector<double> data)
+    {
+
+      double sum = std::accumulate(data.begin(), data.end(), 0.0);
+      double mean = sum / data.size();
+
+      std::vector<double> diff(data.size());
+      std::transform(data.begin(), data.end(), diff.begin(), [mean](double x) { return x - mean; });
+      double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+      double stdev = std::sqrt(sq_sum / data.size());
+
+      return stdev;
+
+    }
 
 private:
 
