@@ -199,12 +199,23 @@ private:
     void initForecastModel()
     {
 
+        /* Note: It seems that removing terms and relearning a new model based on those performs roughly the same 
+         * Most likely because model learn compensates for the previous things - might indicate that they all tell us the same thing?
+         */
+
         double COLUMN = 0; /* Vector will just have 1 column */
 
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
-        double params[KF::DIM] = {-0.00205892, 1, -0.0000146780254, -0.00000953524668, 0.000190260663, 0, 0, 0, 0}; //TMobile UMTS
+        //double params[KF::DIM] = {-0.00120897, 1, -0.0000451813877, -0.000013251127, 0.00024678328}; //TMobile UMTS
+        //double params[KF::DIM] = {0.00150107, 1, 0.0000453623742, -0.00000344499199}; // Ignore inter arrival time
+
+        //double params[KF::DIM] = {-0.00149563, 1, -1.32492258e-05, 2.46792390e-04}; //ignore rtt grad
+        //double params[KF::DIM] = {-0.00782694, 1, 4.50034983e-05, 2.02162291e-04}; //ignore queue delay
 
 	//double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
+
+	//For TMobile-UMTS - historic length of 2
+        double params[KF::DIM] = {0.00488781, 1, 4.20611058e-05, -3.57197417e-05, -3.28436920e-05, -5.39285269e-05, 1.50546970e-05,  9.30899613e-05};
 
         for (int i = 0; i < KF::DIM; i++)
         {

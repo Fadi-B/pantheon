@@ -19,11 +19,19 @@ public:
 
     static const int HISTORY_SIZE = 2;
 
-    /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival] 
+    /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival]
      *
      * However, we will only have 1 bias through all historic states, which is why we encode the state size as 4
+     *
+     * The ignore constants will take binary values to indicate whether a specific feature should be ignored or not.
+     * Any other values than binary will break the program. They should be one-hot encoded.
      */
-    static const int STATE_SIZE = 4;
+
+    static const int INTER_ARRIVAL_IGNORE = 0;
+    static const int RTT_GRAD_IGNORE = 0;
+    static const int QUEUE_DELAY_IGNORE = 0;
+
+    static const int STATE_SIZE = 4 - INTER_ARRIVAL_IGNORE - RTT_GRAD_IGNORE - QUEUE_DELAY_IGNORE;
 
     /* Note: The +1 at the end is to make sure we include an additional space for the bias
      *
@@ -38,7 +46,32 @@ public:
 
         /* State Initialization */
 
-        double init[STATE_SIZE] = {initBandwidth, initRTTGrad, initQueueDelay, initInterArrival};
+        std::vector<double> init(STATE_SIZE, 0);
+
+        if (RTT_GRAD_IGNORE)
+        {
+
+          init = {initBandwidth, initQueueDelay, initInterArrival};
+
+        }
+        else if (QUEUE_DELAY_IGNORE)
+        {
+
+          init = {initBandwidth, initRTTGrad, initInterArrival};
+
+        }
+        else if (INTER_ARRIVAL_IGNORE)
+        {
+
+          init = {initBandwidth, initRTTGrad, initQueueDelay};
+
+        }
+        else
+        {
+
+          init = {initBandwidth, initRTTGrad, initQueueDelay, initInterArrival};
+
+        }
 
 	// Adding Bias
         _mean(0, 0) = 1;
@@ -138,14 +171,27 @@ public:
 	  new_mean[iBand] = 0;
 	}
 
-	new_mean[iRTTG] = measurement[iRTTG]; 		  	// RTT Gradient
-	new_mean[iQueueDelay] = measurement[iQueueDelay];	// Queuing Delay
-	new_mean[iInterArrival] = measurement[iInterArrival];   // Inter arrival time
+        if (RTT_GRAD_IGNORE || QUEUE_DELAY_IGNORE || INTER_ARRIVAL_IGNORE)
+        {
+
+          //Will put things in correct entry
+          new_mean[2] = measurement[2];
+          new_mean[3] = measurement[3];
+
+        }
+        else
+        {
+
+	  new_mean[iRTTG] = measurement[iRTTG]; 		  	// RTT Gradient
+  	  new_mean[iQueueDelay] = measurement[iQueueDelay];	// Queuing Delay
+  	  new_mean[iInterArrival] = measurement[iInterArrival];   // Inter arrival time
+
+        }
 
         _cov = new_cov;
         _mean = new_mean;
 
-	//std::cerr << "\n New Mean \n" << _mean.format(CleanFmt);
+//	std::cerr << "\n New Mean \n" << _mean.format(CleanFmt);
 
         return;
 

@@ -145,13 +145,31 @@ public:
          *        4. Inter Arrival Collector
          * 
          * Note: I have done this in the order that I was designing the state-space model in python
+         *
+         * IMPORTANT: We will be skipping over the collectors according to the IGNORE constants in the kalman_filter.hh file
          * 
          */
 
         uint16_t column_index = 0;
+        uint8_t skipped = 0;
 
         for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
         {
+
+
+            //fprintf(stderr, "Column Index: %d \n", column_index);
+
+            if ((KF::RTT_GRAD_IGNORE && column_index == 1 && !skipped) || (KF::QUEUE_DELAY_IGNORE && column_index == 2 && !skipped) || (KF::INTER_ARRIVAL_IGNORE && column_index == 3 && !skipped))
+            {
+
+	       skipped = 1;
+               continue;
+
+            }
+            else
+            {
+              //Do nothing
+            }
 
             std::list< double > data = (*itr)->getData();
 
@@ -166,6 +184,8 @@ public:
                 if (row_index < window)
                 {
 
+                    //if (column_index == 1) {fprintf(stderr, "QUEUE: %f \n", obj);}
+
                     congestion_history(row_index, column_index) = obj;
 
 		    // Ensure that bias assigned
@@ -178,7 +198,7 @@ public:
                 }
 
                 row_index = row_index + 1;
-                
+
             }
 
             column_index = column_index + 1;
