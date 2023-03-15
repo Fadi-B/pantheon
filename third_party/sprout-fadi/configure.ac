@@ -17,6 +17,11 @@ AC_PATH_PROG([PROTOC], [protoc], [])
 AS_IF([test x"$PROTOC" = x],
   [AC_MSG_ERROR([cannot find protoc, the Protocol Buffers compiler])])
 
+# Adding flags for C++14 version - For compatibility with frugally deep
+CFLAGS="-std=c++14"
+CPPFLAGS="-std=c++14"
+CXXFLAGS="-std=c++14"
+
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
