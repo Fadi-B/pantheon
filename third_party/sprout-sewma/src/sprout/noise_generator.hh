@@ -100,7 +100,5 @@ public:
 private:
 
   int _seed;
-  double _mean;
-  double _std;
 
 };

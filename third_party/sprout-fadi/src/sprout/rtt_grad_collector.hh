@@ -126,6 +126,8 @@ public:
         /* Update observed slopes */
         data.push_back(slope);
 
+        compute_statistics(slope, false);
+
         return slope;
 
     }

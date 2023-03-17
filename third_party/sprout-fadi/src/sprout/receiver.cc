@@ -17,6 +17,9 @@
 
 #include <Eigen/Dense>
 
+#include <iostream>
+
+
 using namespace std;
 
 Receiver::Receiver()
@@ -36,14 +39,26 @@ Receiver::Receiver()
     _MIN_RTT( 1000000 ), /* Initialize to high value */
     _prev_arrival( -1 ),
     _collector_manager(TICK_LENGTH),
-    _KFforecaster(1, 0, 0, 0)
+    _KFforecaster(0.186, 0, 0, 0)
 {
+
+/* if (__cplusplus == 202101L) std::cerr << "C++23";
+    else if (__cplusplus == 202002L) std::cerr << "C++20";
+    else if (__cplusplus == 201703L) std::cerr << "C++17";
+    else if (__cplusplus == 201402L) std::cerr << "C++14";
+    else if (__cplusplus == 201103L) std::cerr << "C++11";
+    else if (__cplusplus == 199711L) std::cerr << "C++98";
+    else std::cerr << "pre-standard C++." << __cplusplus;
+    std::cerr << "\n";
+*/
 
   double cur = CollectorManager::getCurrentTime(_start_time_point);
   _collect_time = cur + TICK_LENGTH;
 
   fprintf(stderr, "Start Time: %f \n", cur);
   fprintf(stderr, "Collect Time: %f \n", _collect_time);
+
+  
 
   for ( int i = 0; i < NUM_TICKS; i++ ) {
     ProcessForecastInterval one_forecast( .001 * TICK_LENGTH,
@@ -72,29 +87,38 @@ void Receiver::advance_to( const uint64_t time, bool server )
       if ( server )
       {
 
+       _collector_manager.resetAllHelperData();
+
        /* Currently 1 x 5 */ //Works
-       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(5);
+//       fprintf(stderr, "score time - measurement \n");
+       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(3,false);
 
 //      Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 //      std::cerr << "\n MEASU \n" << measurement.format(CleanFmt) << "\n";
 
-      int rounded_bytes = int( _count_this_tick + 0.5 );
+//      int rounded_bytes = int( _count_this_tick + 0.5 );
 
-      if ( _count_this_tick > 0 && _count_this_tick < 1)
-      {
+//      if ( _count_this_tick > 0 && _count_this_tick < 1)
+//      {
 
-        rounded_bytes = 1;
+//        rounded_bytes = 1;
 
         /* Ensure we update the rate estimation in this case*/ //This is the broken one
 	//double f = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
-        measurement(0, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
+//        measurement(0, KF::iBand) = PacketCollector::to_bits_per_sec(rounded_bytes, _collector_manager.getTickTime());
 
-      }
+//      }
 	//fprintf(stderr, "Meas. Recv: %f \n", (60*1000*measurement(0, KF::iBand))/(1500*8));
       _KFforecaster.correctForecast(measurement);
 
-      const double alpha = 1.0;
+      const double alpha = 1.0/4.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
+
+      //For debuggin - gonna override
+//      fprintf(stderr, "MY Estimate: %f \n", (20*1000*_KFforecaster.getState().mean()(KF::iBand))/(1400*8));
+//      fprintf(stderr, "EWMA Estimate: %f \n", _ewma_rate_estimate);
+//      _KFforecaster.getState().mean()(KF::iBand) = 2;
+//      std::cerr << "\n EWMA PROP \n" << _KFforecaster.getState().mean().format(CleanFmt) << "\n";
 
       _count_this_tick = 0;
 
@@ -116,8 +140,12 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
   _recv_queue.recv( seq, throwaway_window, len );
   _score_time = std::max( _time + time_to_next, _score_time );
 
+  //fprintf(stderr, "Receiving \n");
+
   if ( server )
   {
+
+  //      fprintf(stderr, "COUNT: %f \n", _count_this_tick);
 
   	uint16_t RTT = Network::timestamp_diff(timestamp_reception, timestamp);
   	uint16_t inter_arrival_time = Network::timestamp_diff(timestamp_reception, _prev_arrival);
@@ -143,8 +171,10 @@ void Receiver::recv( const uint64_t seq, const uint16_t throwaway_window, const 
 
   	}
 
-	_collector_manager.collectData(len/1400, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
-	//fprintf(stderr, "SERVER \n");
+        double count = ((double) len) / 1400.0;
+
+	_collector_manager.collectData(count, RTT, timestamp_reception, _MIN_RTT, inter_arrival_time);
+//	fprintf(stderr, "Collected \n");
 
   }
 
@@ -176,9 +206,13 @@ Sprout::DeliveryForecast Receiver::forecast( bool server )
 
     //fprintf(stderr, "My Forecaster Size: %d \n", _KFforecaster.getBytesToBeDrained().size());
 
-    fprintf(stderr, "Start\n");
-    //fprintf(stderr, "Count: %f \n", _ewma_rate_estimate);
+//    fprintf(stderr, "Start\n");
+//    fprintf(stderr, "EWMA: %f \n", _ewma_rate_estimate);
+//    fprintf(stderr, "My Estimate: %f \n", fadi[0]);
     int tick = 0;
+
+
+//    if (server) {fprintf(stderr, "SERVER: \n");} else {fprintf(stderr, "CLIENT: \n");}
 
     for ( auto it = _forecastr.begin(); it != _forecastr.end(); it++ ) {
       //_cached_forecast.add_counts( it->lower_quantile(_process, 0.05) );
@@ -186,11 +220,23 @@ Sprout::DeliveryForecast Receiver::forecast( bool server )
       //if (iter == _KFforecaster.getBytesToBeDrained().end()) {fprintf(stderr, "Mugi \n");}
       //fprintf(stderr, "Tick: %d \n", tick);
       double expected_drainage = fadi[tick];
-      //fprintf(stderr, "Drain: %f \n", expected_drainage);
+
       //Note: For now we have not added any uncertainty bounds
       if ( server )
       {
-      //fprintf(stderr, "Drain: %f \n", expected_drainage);
+
+//      if (!(_ewma_rate_estimate > 0)) {expected_drainage=0;}
+//      fprintf(stderr, "EWMA: %f \n", _ewma_rate_estimate*tick_number);
+//      fprintf(stderr, "Drain: %f \n", expected_drainage);
+
+//      CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(2);
+//      Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+//      std::cerr << "\n History \n" << measurement.format(CleanFmt) << "\n";
+//      double bw = (20*1000 * measurement(0,0))/(1400*8);
+//      fprintf(stderr, "BW Meas: %f \n", bw);
+
+   //   if (_ewma_rate_estimate <= 0) {expected_drainage = 0;}
+
       _cached_forecast.add_counts( /*_ewma_rate_estimate * tick_number*/ expected_drainage);
 
       }

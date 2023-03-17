@@ -6,6 +6,9 @@
 #include "kalman_filter.hh"
 
 #include "packet_collector.hh"
+
+#include <fdeep/fdeep.hpp>
+
 #include <list>
 
 class KFForecaster
@@ -17,30 +20,32 @@ public:
     //using KF::DIM;
     //using KF::Matrix;
 
-    static const uint16_t bits = 1500 * 8;
+    static const uint16_t bits = PacketCollector::MSS * PacketCollector::BYTE_SIZE;
     static const uint16_t ms_per_sec = 60; /* We should be careful with this one as we are forecasting 20ms into the future*/
     static const uint8_t iModel = 1;
 
-    static const uint16_t NUM_TICKS = 8;
+    static const uint16_t NUM_TICKS = 4;
 
 
     KFForecaster(double initBandwidth, double initRTTGrad, double initQueueDelay, double initInterArrival)
     :state(initBandwidth, initRTTGrad, initQueueDelay, initInterArrival)
     {
 
-        /* Initialize the transition model */
-        initForecastModel();
+          /* Initialize the transition model */
+       	  initForecastModel();
 
-        KF::Matrix F = KF::Matrix::Identity(KF::DIM, KF::DIM);
-        F.row(iModel) = forecastModel.transpose(); //Slightly unsure if this would work so should confirm
+          KF::Matrix F = KF::Matrix::Identity(KF::DIM, KF::DIM);
+//        F.row(iModel) = forecastModel.transpose(); //Slightly unsure if this would work so should confirm
 
-        /* Note: Uncertainty Matrix is initialized to identity in KF class - No need to set it */
+          /* Note: Uncertainty Matrix is initialized to identity in KF class - No need to set it */
 
-        state.setF(F);
+          state.setF(F);
 
-        /* Initialize the noise covariances*/
-        initQ();
-        initR();
+          /* Initialize the noise covariances*/
+          initQ();
+          initR();
+
+        _start_time_point = chrono::high_resolution_clock::now();
 
     }
 
@@ -60,14 +65,27 @@ public:
     void forecast(uint8_t tick_number)
     {
 
+        KF::Matrix F = KF::Matrix::Identity(KF::DIM, KF::DIM);
+
+        double now = CollectorManager::getCurrentTime(_start_time_point);
+
         for (int i=0; i < tick_number; i++)
         {
 
-	    //fprintf(stderr, "Given Number: %d \n", tick_number);
+//	    fprintf(stderr, "PRE: %f \n", state.mean()(KF::iBand));
 
+           if (now > 3000)
+           {
+
+            F.row(iModel) = forecastModel.row(i);
+            state.setF(F);
+
+           }
             state.predict(Q);
 
-            //fprintf(stderr, "Forecast Prediction: %f \n", state.mean()(KF::iBand));
+//            state.mean()(KF::iBand) = 3.4;
+
+//            fprintf(stderr, "Post: %f \n", state.mean()(KF::iBand));
 
             if (i == 0)
             {
@@ -88,6 +106,9 @@ public:
 
         }
 
+       //Will not be changed anymore
+       start = true;
+
       //clearForecast();
       //showdata(bytes_to_be_drained, 8);
 
@@ -100,7 +121,7 @@ public:
 
         Eigen::Matrix<double, KF::DIM, 1> obs; //= observed.row(0).transpose();
 
-        std::cerr << "\n Measurement \n" << observed.format(CleanFmt) << "\n";
+//        std::cerr << "\n Measurement \n" << observed.format(CleanFmt) << "\n";
 
       	for (int i = 0; i < KF::HISTORY_SIZE; i++)
         {
@@ -121,13 +142,13 @@ public:
        // Adding the bias
        obs(0,0) = 1;
 
-       std::cerr << "\n OBS-Post \n" << obs.format(CleanFmt) << "\n";
+  //     std::cerr << "\n OBS-Post \n" << obs.format(CleanFmt) << "\n";
 
-        double b = ((ms_per_sec * 1000) * observed(KF::iBand, 0))/bits;
+        double b = ((ms_per_sec * 1000) * obs(KF::iBand, 0))/bits;
 
-//        fprintf(stderr, "Correct Obs: %f \n", b/*observed(KF::iBand, 0)*/);
+//       fprintf(stderr, "Correct Obs: %f \n", b);
 //        fprintf(stderr, "Current Mean: %f \n", state.mean()(KF::iBand));
-	fprintf(stderr, "Correcting \n");
+//	fprintf(stderr, "Correcting \n");
         state.update(obs, R);
 
     }
@@ -143,7 +164,11 @@ public:
         /* Stored in Mbits/s */
         double rate = state.mean()(KF::iBand); //- 2*stddev;
 
+//        fprintf(stderr, "RATE: %f \n", rate);
+
         double bytes =  ((ms_per_sec * 1000) * rate) / bits;
+
+//        fprintf(stderr, "Bytes: %f \n", bytes);
 
         return bytes;
 
@@ -167,6 +192,11 @@ public:
 
     }
 
+    KF getState()
+    {
+	return state;
+    }
+
     void setQ(KF::Matrix newQ)
     {
 
@@ -183,6 +213,11 @@ public:
 
 private:
 
+    //To avoid odd behavior during start up
+    bool start = false;
+
+    std::chrono::high_resolution_clock::time_point _start_time_point;
+
     KF state;
 
     /* Noise covariances */
@@ -190,7 +225,7 @@ private:
     KF::Matrix R;   /* Observation Noise Covariance */
 
     /* Forecast Model that we have learnt offline */
-    KF::Vector forecastModel;
+    Eigen::Matrix<double, 8, KF::DIM> forecastModel;
 
     double bytes_to_be_drained[NUM_TICKS];
 
@@ -207,22 +242,41 @@ private:
 
         /* Will hold weights corresponding to bias, rtt gradient, queuing delay and inter arrival time */
         //double params[KF::DIM] = {-0.00120897, 1, -0.0000451813877, -0.000013251127, 0.00024678328}; //TMobile UMTS
-        //double params[KF::DIM] = {0.00150107, 1, 0.0000453623742, -0.00000344499199}; // Ignore inter arrival time
 
-        //double params[KF::DIM] = {-0.00149563, 1, -1.32492258e-05, 2.46792390e-04}; //ignore rtt grad
-        //double params[KF::DIM] = {-0.00782694, 1, 4.50034983e-05, 2.02162291e-04}; //ignore queue delay
 
-	//double params[KF::DIM] = {0.40928865, 1, -0.3889949 , -0.0033164 , -0.01104911}; //TMobile-LTE
+        //double params[KF::DIM] = {0,1,0,0,0};
 
-	//For TMobile-UMTS - historic length of 2
-        double params[KF::DIM] = {0.00488781, 1, 4.20611058e-05, -3.57197417e-05, -3.28436920e-05, -5.39285269e-05, 1.50546970e-05,  9.30899613e-05};
 
-        for (int i = 0; i < KF::DIM; i++)
+        //double params[8][KF::DIM] = {{0.05902253, 1, 0.00023383, -0.0010024 ,  0.00124224},
+        //{-0.00639942, 1, 2.15790548e-04, 4.18576614e-05, 1.67243052e-04}, 
+        //{0.01497034, 1, -0.00042156, -0.00023359,  0.00010058}, 
+        //{0.01890435, 1, 5.79744307e-04, -2.43326647e-04, -6.67425321e-05}, 
+        //{-0.03524784, 1, -0.00259395,  0.00034825,  0.00032649}, 
+        //{-0.01470577, 1, -2.36631317e-03,  6.08377038e-05,  4.86204102e-04},
+        //{0.01216091, 1, 0.00244498, -0.00011558, -0.0001529},
+        //{0.01307779, 1, 2.41631104e-03, -1.45166175e-04, -5.37754775e-05}};
+
+
+        double params[8][KF::DIM] = {{-0.01635259, 1, 7.62239417e-04, 7.06147579e-05, 7.52978888e-04},
+        {0.02469452, 1, -6.90801984e-04, -8.74495950e-05, -1.09508919e-03},
+        {-0.01206305, 1, 4.56056864e-04, 5.62361262e-05, 4.94337408e-04},
+        {0.00396807, 1, 6.38296570e-05, -1.07335821e-05, -2.71770445e-05},
+        {-3.27033924e-06, 1, -7.60925365e-04, -7.60435763e-07, -4.49435499e-04},
+        {0.0195256, 1,0.00094799, -0.00010472, -0.00012913},
+        {-2.88735809e-06, 1, -6.91335377e-04, -1.58784203e-05, -2.35765707e-04},
+        {0.00452315, 1, 3.54427466e-04,  8.22688359e-05, -5.14540091e-04}};
+
+        for (int i = 0; i < 8; i++) 
         {
 
-            forecastModel(i, COLUMN) = params[i];
+        for (int j = 0; j < KF::DIM; j++)
+        {
+
+            forecastModel(i, j) = params[i][j];
 
         }
+
+      }
 
     }
 
@@ -232,7 +286,7 @@ private:
 	Q.setZero();
 
         /* For now will assume everything else has noise 0 */
-        Q(KF::iBand, KF::iBand) = 0.21;
+        Q(KF::iBand, KF::iBand) = 0.21;//0.21;
 
         /* Note: Should check that the other entries are 0 by default */
 
@@ -245,7 +299,7 @@ private:
 
         //R(KF::iBand, KF::iBand) = 2;
 
-        R(KF::iBand, KF::iBand) = 0.35873197;
+        R(KF::iBand, KF::iBand) = 0.36;
 
 
     }

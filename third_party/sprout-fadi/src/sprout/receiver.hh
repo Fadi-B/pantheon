@@ -18,6 +18,8 @@
 #include "collector_manager.hh"
 #include "kalman_forecaster.hh"
 
+//#include <fdeep/fdeep.hpp>
+
 class Receiver
 {
 private:
@@ -27,7 +29,7 @@ private:
   static const int NUM_BINS = 256;
   static const int TICK_LENGTH = 60;
   static const int MAX_ARRIVALS_PER_TICK = 30;
-  static const int NUM_TICKS = 8;
+  static const int NUM_TICKS = 4;
 
   class RecvQueue {
   private:

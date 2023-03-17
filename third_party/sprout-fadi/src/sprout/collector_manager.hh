@@ -77,9 +77,9 @@ public:
         	    (*itr)->compute();
                 (*itr)->resetHelperData();
 
-//                std::list< double > data = (*itr)->getData();
+                std::list< double > data = (*itr)->getData();
 
-//                (*itr)->saveData(data);
+                (*itr)->saveData(data);
             }
 
             switch((*itr)->getType())
@@ -113,12 +113,38 @@ public:
         }
 
         /* Ensure we update the next collect time */
-	    if (collect)
+
+        current_time = getCurrentTime(_start_time_point);
+
+	    if (current_time >= _collect_time)
         {
 
             _collect_time = current_time + COLLECT_INTERVAL;
 
         }
+
+    }
+
+    void resetAllHelperData()
+    {
+
+      for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
+      {
+
+        (*itr)->compute();
+
+        (*itr)-> resetHelperData();
+
+         std::list< double > data = (*itr)->getData();
+
+         (*itr)->saveData(data);
+
+      }
+
+      double current_time = getCurrentTime(_start_time_point);
+
+      _collect_time = current_time + COLLECT_INTERVAL;
+
 
     }
 
@@ -128,7 +154,7 @@ public:
      * @param window_length 
      * @return Matrix 
      */
-    Matrix getCongestionSignalsHistory(const int window)
+    Matrix getCongestionSignalsHistory(const int window, bool standardize)
     {
 
 	// Need to declare dynamic since window is not considered a constant
@@ -153,6 +179,9 @@ public:
         uint16_t column_index = 0;
         uint8_t skipped = 0;
 
+        double mean;
+        double std;
+
         for (std::list<Collector*>::iterator itr=collectors.begin(); itr!=collectors.end(); itr++)
         {
 
@@ -172,19 +201,30 @@ public:
             }
 
             std::list< double > data = (*itr)->getData();
+            mean = (*itr)->getMean();
+            std = (*itr)->getStd();
 
             uint16_t row_index = 0;
 
+            std::list<double>::reverse_iterator revitr=data.rbegin();
+
             /* We are reverse iterating as we want to look back on the past to do our forecast */
-            for (std::list<double>::reverse_iterator revitr=data.rbegin(); revitr!=data.rend(); revitr++ )
+            for (revitr; revitr!=data.rend(); revitr++ )
             {
 
-                auto obj = *revitr;
+                double obj = *revitr;
+
+                if (standardize && !((*itr)->getType() == Type::Packet))
+                {
+
+                  obj = (obj - mean)/std;
+
+                }
 
                 if (row_index < window)
                 {
 
-                    //if (column_index == 1) {fprintf(stderr, "QUEUE: %f \n", obj);}
+//                    if (column_index == 0) {fprintf(stderr, "BW: %f \n", obj);
 
                     congestion_history(row_index, column_index) = obj;
 
@@ -201,9 +241,18 @@ public:
 
             }
 
+            /* NOTE: Last element is tick time - need to ensure 0 is returned instead as otherwise wrong result!*/
+            if (revitr == data.rend())
+            {
+
+               congestion_history(row_index - 1, column_index) = 0;
+
+            }
+
             column_index = column_index + 1;
 
         }
+
 
         return congestion_history;
 
@@ -232,3 +281,4 @@ private:
 };
 
 #endif
+

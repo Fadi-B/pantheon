@@ -90,6 +90,8 @@ public:
 
         data.push_back(ewma_inter_arrival_time);
 
+        compute_statistics(ewma_inter_arrival_time, false);
+
         count = count + 1;
 
 	return ewma_inter_arrival_time;
@@ -136,3 +138,4 @@ private:
 
 
 #endif
+

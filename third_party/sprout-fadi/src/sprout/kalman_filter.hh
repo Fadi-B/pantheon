@@ -4,7 +4,8 @@
 #include "assert.h"
 #include <stdio.h>
 
-//#include "noise_generator.hh"
+#include <fdeep/fdeep.hpp>
+
 
 class KF
 {
@@ -17,7 +18,7 @@ public:
     static const int iQueueDelay = 3;
     static const int iInterArrival = 4;
 
-    static const int HISTORY_SIZE = 2;
+    static const int HISTORY_SIZE = 1;
 
     /* State will be [bias, Throughput, RTT Grad, Queue Delay, Inter Arrival]
      *
@@ -40,6 +41,10 @@ public:
 
     typedef Eigen::Matrix<double, DIM, 1> Vector;
     typedef Eigen::Matrix<double, DIM, DIM> Matrix;
+
+    //Will determine whether to do non-linear (less interpretable forecasting)
+    //Requires that the model is specified as a fdeep json model in the current working directory
+    static const uint8_t MODE_NON_LINEAR = 1;
 
     KF(double initBandwidth, double initRTTGrad, double initQueueDelay, double initInterArrival)
     {
@@ -104,31 +109,170 @@ public:
         /* Noiseless connection between measurement and state initialization */
         H = Matrix::Identity(DIM, DIM); // For now we assume a unity connection
 
+        _kap = 3 - DIM; //standard to use this value
+        alpha_0 = _kap / (_kap + DIM);
+        alpha = 1 / (2*(_kap + DIM));
+
+
+    }
+
+
+    Vector system_transformation(Vector sig_point)
+    {
+
+      //Will define our function here - no restrictions on it
+
+      Vector pred = sig_point;
+
+      if (MODE_NON_LINEAR)
+      {
+
+	//For now gives <rttgrad, queue_delay, inter arrival time>
+	std::vector<float> features = eigen_data_to_vector(sig_point);
+        bool is_zero = std::all_of(features.begin(), features.end(), [](int i) { return i==0; });
+
+	double prediction = sig_point[iBand];
+
+        if (!is_zero)
+        {
+
+          //Note: Model does not include a bias term at the moment
+          const auto result = _model.predict(
+          { fdeep::tensor( fdeep::tensor_shape(static_cast<std::size_t>(1), static_cast<std::size_t>(3)) , features) });
+
+          const std::vector<float> to_vec = result[0].to_vector();
+
+          //Add the change to our current mean value
+          prediction = prediction + to_vec[0];
+
+        }
+
+        pred[iBand] = std::max(prediction, (double)0);
+
+      }
+      else
+      {
+
+        pred = F * sig_point;
+
+      }
+
+      return pred;
+
+    }
+
+    //For now we have unity transformation between true state and measurement state
+    Vector observation_transformation(Vector sig_point)
+    {
+
+      return sig_point;
+
+    }
+
+    Eigen::Matrix<double, 2*DIM + 1, DIM> compute_sigma_points()
+    {
+
+      Eigen::LLT<Matrix> LL(_cov); //Make sure we get the stds
+
+      Matrix L = LL.matrixL();
+
+
+      //Will hold all our signma points in the rows
+      Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points;
+
+      sigma_points.row(0) = _mean.transpose();
+
+      for (int i = 0; i < DIM; i++)
+      {
+
+        Vector translation = (std::sqrt(_kap + DIM))*(L.col(i));
+
+        Vector sig_right = _mean + translation;
+        Vector sig_left = _mean - translation;
+
+        //sigma_points matrix will hold two conjugate points in consecutive positions
+        sigma_points.row(2*i + 1) = sig_right.transpose();
+        sigma_points.row(2*i + 2) = sig_left.transpose();
+
+      }
+
+      return sigma_points;
+
+    }
+
+    Vector compute_mean(Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points_transformed)
+    {
+
+
+      /* Computing the new mean and covariance */
+
+      Vector new_mean = alpha_0 * sigma_points_transformed.row(0).transpose();
+
+      for (int i = 1; i < 2*DIM + 1; i++)
+      {
+
+        new_mean = new_mean + alpha * sigma_points_transformed.row(0).transpose();
+
+      }
+
+      return new_mean;
+
+    }
+
+    Matrix compute_cov(Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points_transformed, Vector new_mean)
+    {
+      
+      Vector sig_0 = sigma_points_transformed.row(0).transpose();
+      Matrix new_cov = alpha_0 * ((sig_0 - new_mean)*(sig_0 - new_mean).transpose());
+
+      for (int i = 1; i < 2*DIM + 1; i++)
+      {
+        
+        Vector sig = sigma_points_transformed.row(i).transpose();
+        new_cov = new_cov + alpha * ((sig - new_mean)*(sig - new_mean).transpose());
+
+      }
+
+      return new_cov;
+
     }
 
     void predict(Matrix Q)
     {
 
-	 //Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-	 //std::cerr << "\n F \n" << F.format(CleanFmt);
+    /* Computing the Sigma Points */
+      Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points = compute_sigma_points();
 
-	    /* Checking correct dimensions */
-	    //assert(  );
-        //fprintf(stderr, "Pre Pred: %f \n", _mean(iBand, 0));
-        Vector new_mean = F * _mean;
-        //new_mean(iBand, 0) = 1;
-        const Matrix newP = F * _cov * F.transpose() + Q;
 
-        // Max function does not seem to work so will be doing it manually
-	    double throughput = new_mean[iBand];
+      Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points_transformed;
 
-	    if (throughput < 0)
-	    {
-	        new_mean[iBand] = 0;
-	    }
+      /* Transforming all sigma points */
+      for (int i = 0; i < 2*DIM + 1; i++)
+      {
 
-        _cov = newP;
-        _mean = new_mean;
+        Vector transformed = system_transformation(sigma_points.row(i).transpose());
+
+        sigma_points_transformed.row(i) = transformed.transpose();
+
+      }
+
+
+      /* Computing the new mean and covariance */
+
+      Vector new_mean = compute_mean(sigma_points_transformed);
+      Matrix new_cov = compute_cov(sigma_points_transformed, new_mean);
+
+
+      // Max function does not seem to work so will be doing it manually
+      double throughput = new_mean[iBand];
+
+      if (throughput <= 0)
+      {
+	      new_mean[iBand] = 0;
+      }
+
+      _cov = new_cov + Q; //Add additive uncertainty noise
+      _mean = new_mean;
 
     }
 
@@ -136,62 +280,81 @@ public:
     void update(Vector measurement, Matrix measurementVar)
     {
 
-	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+      	Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 
-	//fprintf(stderr, "Meas Update: %f \n", measurement(iBand, 0));
-        //fprintf(stderr, "Pre Update: %f \n", _mean(iBand, 0));
 
-	//std::cerr << "\n Pre Update \n" << _mean.format(CleanFmt);
+      //Compute the new updates sigma points as mean and covariance have changed
+      Eigen::Matrix<double, 2*DIM + 1, DIM> sigma_points = compute_sigma_points();
 
-        const Vector y = innovation(measurement);
+      Eigen::Matrix<double, 2*DIM + 1, DIM> transformed;
 
-	//fprintf(stderr, "Innovation: %f \n", y(iBand, 0));
+      /* Transforming all sigma points */
+      for (int i = 0; i < 2*DIM + 1; i++)
+      {
 
-        const Matrix K = kalman_gain(measurementVar);
+        //Maps them to the measurement space
+        Vector tran = observation_transformation(sigma_points.row(i).transpose());
 
-	//fprintf(stderr, "Kalman Gain: %f \n", K(iBand, 0));
+        transformed.row(i) = tran.transpose();
 
-//	std::cerr << "\n Pre-Cov \n" << _cov.format(CleanFmt) << "\n";
+      }
 
-        Vector new_mean = _mean + K * y;
-        Matrix new_cov = (Matrix::Identity() - K * H) * _cov;
+      Vector z_mean = compute_mean(transformed);
+      Matrix z_cov = compute_cov(transformed, z_mean) + measurementVar; //Make sure to add additive noise
 
-//	std::cerr << "\n Kalman Gain \n" << K.format(CleanFmt);
-//	std::cerr << "\n Post-Cov \n" << new_cov.format(CleanFmt) << "\n";
+      /* Computing cross-covariance matrix */
 
-        //fprintf(stderr, "Post Update: %f \n", _mean(iBand, 0));
+      Matrix cross_cov = alpha_0 * ((sigma_points.row(0).transpose() - _mean)*(transformed.row(0).transpose() - z_mean).transpose());
 
-	new_mean[iBias] = 1; // Bias
+      for (int i = 1; i < 2*DIM + 1; i++)
+      {
 
-	// Max function does not seem to work so will be doing it manually
-	double throughput = new_mean[iBand];
+        Vector sig = sigma_points.row(i).transpose();
+        Vector meas = transformed.row(i).transpose();
 
-	if (throughput < 0)
-	{
-	  new_mean[iBand] = 0;
-	}
+        cross_cov = cross_cov + alpha * ((sig - _mean)*(meas - z_mean).transpose());
 
-        if (RTT_GRAD_IGNORE || QUEUE_DELAY_IGNORE || INTER_ARRIVAL_IGNORE)
-        {
+      }
 
-          //Will put things in correct entry
-          new_mean[2] = measurement[2];
-          new_mean[3] = measurement[3];
+       /* Computing Kalman Gain */
 
-        }
-        else
-        {
+      Matrix K = kalman_gain(z_cov, cross_cov); //fix this - will prob throw error
 
-	  new_mean[iRTTG] = measurement[iRTTG]; 		  	// RTT Gradient
-  	  new_mean[iQueueDelay] = measurement[iQueueDelay];	// Queuing Delay
-  	  new_mean[iInterArrival] = measurement[iInterArrival];   // Inter arrival time
+      Vector new_mean = _mean + K * (measurement - z_mean);
+      Matrix new_cov = _cov - K * z_cov * K.transpose();
 
-        }
 
-        _cov = new_cov;
-        _mean = new_mean;
+      new_mean[iBias] = 1; // Bias
 
-//	std::cerr << "\n New Mean \n" << _mean.format(CleanFmt);
+      // Max function does not seem to work so will be doing it manually
+      double throughput = new_mean[iBand];
+
+      if (throughput < 0)
+      {
+         new_mean[iBand] = 0;
+      }
+
+      if (RTT_GRAD_IGNORE || QUEUE_DELAY_IGNORE || INTER_ARRIVAL_IGNORE)
+      {
+
+        //Will put things in correct entry
+        new_mean[2] = measurement[2];
+        new_mean[3] = measurement[3];
+
+      }
+      else
+      {
+
+       new_mean[iRTTG] = measurement[iRTTG]; 		  	// RTT Gradient
+       new_mean[iQueueDelay] = measurement[iQueueDelay];	// Queuing Delay
+       new_mean[iInterArrival] = measurement[iInterArrival];   // Inter arrival time
+
+      }
+
+      _cov = new_cov;
+      _mean = new_mean;
+
+	std::cerr << "\n New Mean \n" << K.format(CleanFmt);
 
         return;
 
@@ -218,29 +381,9 @@ public:
         return S;
     }
 
-    Matrix kalman_gain(Matrix R)
+    Matrix kalman_gain(Matrix z_cov, Matrix cross_cov)
     {
-        Matrix S = innovation_cov(R);
-/*
-	Matrix N;
 
-	for (int i = 0; i < DIM; i++)
-	{
-
-	  for (int j = 0; j < DIM; j++)
-	  {
-
-	    double noise = (*gen).get_noise(generator);
-
-	    N(i, j) = noise;
-
-	  }
-
-	}
-
-	// Add small noise to ensure invertible
-	S = S + N;
-*/
         //printf("SIZE: %d\n", (_cov * H.transpose()).size());
 
 	/* We will compute the kalman gain without explicitly
@@ -252,9 +395,9 @@ public:
 	 * From which K can be easily obtained by transposing the result
 	 *
 	 */
-	Matrix A = S.transpose();
+	Matrix A = z_cov.transpose();
 
-	Matrix x = A.colPivHouseholderQr().solve(H*(_cov.transpose())); // computes A^-1 * b
+	Matrix x = A.colPivHouseholderQr().solve(cross_cov.transpose()); // computes A^-1 * b
 	Matrix K_solv = x.transpose();
 
         //Matrix K_solv = _cov * H.transpose() * S.inverse();
@@ -291,27 +434,60 @@ public:
     }
 
 
-    Matrix cov() const
+    /**
+     * @brief Utility function for converting between eigen matrices and tensors
+     * 
+     * @return 
+     */
+
+    std::vector<float> eigen_data_to_vector(Vector state)
+    {
+
+      Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+       //std::cerr << "\n state \n" << state.format(CleanFmt);
+
+      //Size 3
+      std::vector<float> data;
+      data.reserve(DIM - iRTTG);
+
+
+      //We just want to get prediction data (RTTG - IRT)
+      for (int i = iRTTG; i < DIM; i++)
+      {
+
+        double elem = state[i];
+        data.push_back(elem);
+        //fprintf(stderr, "Adding: %f \n", data[i - iRTTG]);
+
+      }
+
+      return data;
+
+    }
+
+
+
+    Matrix cov()
     {
         return _cov;
     }
 
-    Vector mean() const
+    Vector mean()
     {
         return _mean;
     }
 
-    double bandwidth() const
+    double bandwidth()
     {
         return _mean(iBand);
     }
 
-    double RTTGrad() const
+    double RTTGrad()
     {
         return _mean(iRTTG);
     }
 
-    double delay() const
+    double delay()
     {
         return _mean(iQueueDelay);
     }
@@ -328,9 +504,19 @@ private:
     /* Noiseless connection between measurement and state */
     Matrix H;
 
+    double _kap;
+    double alpha_0;
+    double alpha;
+
+    //Load in the non-linear model
+    const fdeep::model _model = fdeep::load_model("fdeep_model.json");
+
 /* Creating the Gaussian Noise generator */
     //NoiseGenerator * gen = new NoiseGenerator(0, 0, 0.01); //seed, mean, std
     //NoiseGenerator::Generator generator = (*gen).get_generator();
 
 };
+
+
+
 

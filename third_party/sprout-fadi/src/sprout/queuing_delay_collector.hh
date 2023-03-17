@@ -96,6 +96,8 @@ public:
 
         data.push_back(queuing_delay);
 
+        compute_statistics(queuing_delay, false);
+
 	return queuing_delay;
 
     }

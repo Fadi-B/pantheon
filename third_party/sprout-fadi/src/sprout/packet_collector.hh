@@ -16,7 +16,7 @@ public:
     using Collector::data;
     using Collector::writer;
 
-    static const int MSS = 1500;     /* Bytes */
+    static const int MSS = 1400;     /* Bytes */
     static const int BYTE_SIZE = 8;  /* Bits */
 
     static double to_bits_per_sec(double packets, double tick_time)
@@ -24,10 +24,14 @@ public:
 
         int bits = MSS * BYTE_SIZE;
 
-        double total_bits = packets * bits;
+//        fprintf(stderr, "PACKETS: %f \n", packets);
+
+        double total_bits = packets * (double) bits;
+
+//        fprintf(stderr, "Total Bits: %f \n", total_bits);
 
         /* Dealing with Mbits/s throughout */
-        double Mbits_per_sec = total_bits / (tick_time*1000);
+        double Mbits_per_sec = total_bits / ( (double) tick_time*1000);
 
         return Mbits_per_sec;
 
@@ -50,6 +54,8 @@ public:
     {
 
         helper_data = helper_data + packets;
+//        fprintf(stderr, "COUNT in PackColl: %f \n", helper_data);
+
         return;
 
     }
@@ -57,13 +63,15 @@ public:
     double compute()
     {
 
-        //fprintf(stderr, "Helper2: %f \n", helper_data);
+        //fprintf(stderr, "Computing BW for Packets: %f \n", helper_data);
 
         double Mbits_per_sec = to_bits_per_sec(helper_data, TICK_TIME);
 
         data.push_back(Mbits_per_sec);
 
-	    return Mbits_per_sec;
+        compute_statistics(Mbits_per_sec, false);
+
+	return Mbits_per_sec;
 
     }
 
