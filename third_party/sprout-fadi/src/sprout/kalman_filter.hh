@@ -44,7 +44,7 @@ public:
 
     //Will determine whether to do non-linear (less interpretable forecasting)
     //Requires that the model is specified as a fdeep json model in the current working directory
-    static const uint8_t MODE_NON_LINEAR = 1;
+    static const uint8_t MODE_NON_LINEAR = 0;
 
     KF(double initBandwidth, double initRTTGrad, double initQueueDelay, double initInterArrival)
     {
