@@ -57,12 +57,6 @@ public:
     double compute()
     {
 
-	/* Under the assumption that RTTGrad remains unchanged when not enough data observed */
-        if (helper_data.empty() || helper_data.size() == 1) {
-
-	    return 0;
-
-        }
 
         int size = helper_data.size();
 
@@ -106,14 +100,22 @@ public:
 //        else
 //        {
 
-	double slope = 0;
+	    double slope = 0;
 
-        if (denominator != 0)
+    /* Under the assumption that RTTGrad remains unchanged when not enough data observed */
+        if (!(helper_data.empty() || helper_data.size() == 1)) 
         {
 
-	  slope = numerator / denominator;
+            if (denominator != 0)
+            {
+
+	        slope = numerator / denominator;
+
+            }
 
         }
+
+       
 
 //        }
 
