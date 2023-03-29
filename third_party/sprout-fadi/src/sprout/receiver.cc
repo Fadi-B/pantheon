@@ -91,7 +91,7 @@ void Receiver::advance_to( const uint64_t time, bool server )
 
        /* Currently 1 x 5 */ //Works
 //       fprintf(stderr, "score time - measurement \n");
-       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(3,false);
+       CollectorManager::Matrix measurement = _collector_manager.getCongestionSignalsHistory(1,false);
 
 //      Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 //      std::cerr << "\n MEASU \n" << measurement.format(CleanFmt) << "\n";
@@ -113,6 +113,8 @@ void Receiver::advance_to( const uint64_t time, bool server )
 
       const double alpha = 1.0/4.0;
       _ewma_rate_estimate = (1 - alpha) * _ewma_rate_estimate + ( alpha * _count_this_tick );
+
+      _ewma_rate_estimate = std::max(_ewma_rate_estimate, 0.25);
 
       //For debuggin - gonna override
 //      fprintf(stderr, "MY Estimate: %f \n", (20*1000*_KFforecaster.getState().mean()(KF::iBand))/(1400*8));
